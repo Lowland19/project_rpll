@@ -1,19 +1,20 @@
 import 'package:flutter/material.dart';
-import 'package:project_rpll/providers/auth_provider.dart';
-import 'package:project_rpll/screens/home_screen.dart';
 import 'package:provider/provider.dart';
 
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+import '../providers/auth_provider.dart';
+import 'home_screen.dart';
+
+class RegistrationPage extends StatefulWidget {
+  const RegistrationPage({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<RegistrationPage> createState() => _RegistrationPageState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _RegistrationPageState extends State<RegistrationPage> {
   final _formKey = GlobalKey<FormState>();
 
-  final _emailController = TextEditingController();
+  final _userIdController = TextEditingController();
   final _passwordController = TextEditingController();
 
   @override
@@ -29,21 +30,17 @@ class _LoginScreenState extends State<LoginScreen> {
             children: [
               SizedBox(height: 172),
               TextFormField(
-                controller: _emailController,
+                controller: _userIdController,
                 decoration: const InputDecoration(
-                  labelText: 'Email', // Diubah dari 'User ID'
-                  prefixIcon: Icon(Icons.email), // Diubah dari Icon(Icons.person)
-                  hintText: 'Masukan Email Anda',
+                  labelText: 'User ID',
+                  prefixIcon: Icon(Icons.person),
+                  hintText: 'Masukan ID Pengguna Anda',
                   border: OutlineInputBorder(),
                 ),
                 textInputAction: TextInputAction.next,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Email tidak boleh kosong';
-                  }
-                  // Validasi format email sederhana
-                  if (!value.contains('@') || !value.contains('.')) {
-                    return 'Gunakan format email yang valid';
+                    return 'User ID tidak boleh kosong';
                   }
                   return null;
                 },
@@ -73,28 +70,27 @@ class _LoginScreenState extends State<LoginScreen> {
               SizedBox(
                 width: 200,
                 child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red),
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
                   onPressed: () async {
                     if (_formKey.currentState!.validate()) {
                       try {
-                        await context.read<AuthProvider>().login(
-                          email: _emailController.text,
+                        await context.read<AuthProvider>().registerUser(
+                          email: _userIdController.text,
                           password: _passwordController.text,
                         );
-                        if (context.mounted) {
-                           // Menggunakan nama rute standar: '/home'
-                           Navigator.pushAndRemoveUntil(context,MaterialPageRoute(builder: (context)=> HomeScreen()),(route)=>false);
-                        }
+                        Navigator.pushAndRemoveUntil(context,MaterialPageRoute(builder: (context)=> HomeScreen()),(route)=>false);
                       } catch (error) {
                         if (!context.mounted) return;
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Login Gagal: ${error.toString()}')),
+                          SnackBar(content: Text(error.toString())),
                         );
                       }
                     }
                   },
-                  child: const Text('Login', style: TextStyle(color: Colors.white),),
+                  child: const Text(
+                    'Register',
+                    style: TextStyle(color: Colors.white),
+                  ),
                 ),
               ),
             ],

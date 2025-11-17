@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:project_rpll/providers/auth_provider.dart';
+import 'package:project_rpll/screens/start_screen.dart';
 import 'package:provider/provider.dart';
 
 class AccountWidget extends StatelessWidget {
@@ -7,8 +8,6 @@ class AccountWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final user = Provider.of<AuthProvider>(context).user;
-
     return Column(
       mainAxisAlignment: MainAxisAlignment.start,
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -17,6 +16,7 @@ class AccountWidget extends StatelessWidget {
         ElevatedButton(
           onPressed: () {
             Provider.of<AuthProvider>(context,listen: false).logout();
+            Navigator.pushAndRemoveUntil(context,MaterialPageRoute(builder: (context)=> StartScreen()),(route)=>false);
           },
           child: Text('Logout'),
         ),

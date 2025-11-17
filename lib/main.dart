@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:project_rpll/providers/auth_provider.dart';
 import 'package:project_rpll/screens/home_screen.dart';
 import 'package:project_rpll/screens/login_screen.dart';
+import 'package:project_rpll/screens/start_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -46,7 +47,7 @@ class MyApp extends StatelessWidget {
         // tested with just a hot reload.
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
-      home: const AuthGuard(),
+      home: const StartScreen(),
     );
   }
 }

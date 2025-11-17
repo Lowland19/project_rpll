@@ -37,7 +37,6 @@ class _HomeScreenState extends State<HomeScreen> {
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.book), label: 'Laporan'),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Akun'),
         ],
         onTap: _onItemTapped,

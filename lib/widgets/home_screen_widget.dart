@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:project_rpll/providers/auth_provider.dart';
+import 'package:project_rpll/screens/laporan_screen.dart';
 import 'package:provider/provider.dart';
 
 class HomeScreenWidget extends StatelessWidget {
@@ -31,7 +32,12 @@ class HomeScreenWidget extends StatelessWidget {
                 Card(
                   elevation: 3,
                   child: InkWell(
-                    onTap: (){},
+                    onTap: (){
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => LaporanScreen()),
+                      );
+                    },
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [

@@ -11,37 +11,107 @@ class DetilLaporan extends StatelessWidget {
     final _futureDetil = Supabase.instance.client
         .from('laporan')
         .select()
-        .eq('id', id).single();
+        .eq('id', id)
+        .single();
 
     return Scaffold(
+      backgroundColor: const Color(0xFF3B0E0E),
       appBar: AppBar(
-        title: const Text('Detail Laporan'),
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        backgroundColor: const Color(0xFF5A0E0E),
+        title: const Text(
+          'Detail Laporan',
+          style: TextStyle(color: Colors.white),
+        ),
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
-      body: FutureBuilder(
-        future: _futureDetil,
-        builder: (context, snapshot) {
-          if (!snapshot.hasData) {
-            return const Center(child: CircularProgressIndicator());
-          }
+      body: Stack(
+        children: [
+          Positioned(
+            top: -40,
+            right: -30,
+            child: Container(
+              width: 140,
+              height: 140,
+              decoration: const BoxDecoration(
+                color: Color(0xFF5A0E0E),
+                shape: BoxShape.circle,
+              ),
+            ),
+          ),
+          FutureBuilder(
+            future: _futureDetil,
+            builder: (context, snapshot) {
+              if (!snapshot.hasData) {
+                return const Center(
+                  child: CircularProgressIndicator(color: Colors.white),
+                );
+              }
 
-          final detillaporan = snapshot.data!;
+              final detillaporan = snapshot.data!;
 
-          return Padding(padding: EdgeInsets.all(16), child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(detillaporan['penerima_manfaat'].toString(),),
-              SizedBox(height: 16,),
-              Text("Kelayakan: ${detillaporan['persen_kelayakan']}%"),
-              SizedBox(height: 16,),
-              Text("Tanggal: ${detillaporan['tanggal_pelaporan']}"),
-              SizedBox(height: 16,),
-              Text("Deskripsi: ${detillaporan['deskripsi']}"),
-              SizedBox(height: 16,),
-              Image.network(detillaporan['gambar'])
-            ],
-          ));
-        },
+              return SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF5A0E0E),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            detillaporan['penerima_manfaat'],
+                            style: const TextStyle(
+                              fontSize: 22,
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            "Kelayakan: ${detillaporan['persen_kelayakan']}%",
+                            style: const TextStyle(color: Colors.white70),
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            "Tanggal: ${detillaporan['tanggal_pelaporan']}",
+                            style: const TextStyle(color: Colors.white70),
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            "Deskripsi:",
+                            style: const TextStyle(
+                              fontSize: 16,
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            detillaporan['deskripsi'],
+                            style: const TextStyle(color: Colors.white),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: Image.network(
+                        detillaporan['gambar'],
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ],
       ),
     );
   }

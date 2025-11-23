@@ -17,17 +17,15 @@ class _RegistrationPageState extends State<RegistrationPage> {
   final _userIdController = TextEditingController();
   final _passwordController = TextEditingController();
   final _alamatController = TextEditingController();
+  final _usernameController = TextEditingController();
+  final _fullNameController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Stack(
         children: [
-          Container(
-            decoration: const BoxDecoration(
-              color: Color(0xFF3B0E0E),
-            ),
-          ),
+          Container(decoration: const BoxDecoration(color: Color(0xFF3B0E0E))),
 
           Positioned(
             top: -50,
@@ -64,7 +62,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
                 ),
               ],
             ),
-          )
+          ),
         ],
       ),
     );
@@ -85,10 +83,10 @@ class _RegistrationPageState extends State<RegistrationPage> {
               controller: _userIdController,
               style: const TextStyle(color: Colors.white),
               decoration: const InputDecoration(
-                labelText: 'User ID',
+                labelText: 'Email User',
                 labelStyle: TextStyle(color: Colors.white),
                 prefixIcon: Icon(Icons.person, color: Colors.white),
-                hintText: 'Masukan ID Pengguna Anda',
+                hintText: 'Masukan Email Anda',
                 hintStyle: TextStyle(color: Colors.white70),
                 enabledBorder: OutlineInputBorder(
                   borderSide: BorderSide(color: Colors.white),
@@ -100,14 +98,63 @@ class _RegistrationPageState extends State<RegistrationPage> {
               textInputAction: TextInputAction.next,
               validator: (value) {
                 if (value == null || value.isEmpty) {
-                  return 'User ID tidak boleh kosong';
+                  return 'Email tidak boleh kosong';
+                }
+                return null;
+              },
+            ),
+            SizedBox(height: 16),
+            TextFormField(
+              controller: _usernameController,
+              style: const TextStyle(color: Colors.white),
+              decoration: const InputDecoration(
+                labelText: 'Username Pengguna',
+                labelStyle: TextStyle(color: Colors.white),
+                prefixIcon: Icon(Icons.home, color: Colors.white),
+                hintText: 'Masukkan username pengguna',
+                hintStyle: TextStyle(color: Colors.white70),
+                enabledBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.white),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.white),
+                ),
+              ),
+              textInputAction: TextInputAction.done,
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Username pengguna tidak boleh kosong';
+                }
+                return null;
+              },
+            ),
+            SizedBox(height: 16),
+            TextFormField(
+              controller: _fullNameController,
+              style: const TextStyle(color: Colors.white),
+              decoration: const InputDecoration(
+                labelText: 'Nama Lengkap Pengguna',
+                labelStyle: TextStyle(color: Colors.white),
+                prefixIcon: Icon(Icons.home, color: Colors.white),
+                hintText: 'Masukkan nama lengkap pengguna',
+                hintStyle: TextStyle(color: Colors.white70),
+                enabledBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.white),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.white),
+                ),
+              ),
+              textInputAction: TextInputAction.done,
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Nama lengkap pengguna tidak boleh kosong';
                 }
                 return null;
               },
             ),
 
-            const SizedBox(height: 32),
-
+            const SizedBox(height: 16),
             TextFormField(
               controller: _passwordController,
               style: const TextStyle(color: Colors.white),
@@ -137,7 +184,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
               },
             ),
 
-            const SizedBox(height: 32),
+            const SizedBox(height: 16),
 
             TextFormField(
               controller: _alamatController,
@@ -163,33 +210,26 @@ class _RegistrationPageState extends State<RegistrationPage> {
                 return null;
               },
             ),
-
-            const SizedBox(height: 48),
+            const SizedBox(height: 16),
 
             SizedBox(
               width: 200,
               child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red,
-                ),
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
                 onPressed: () async {
                   if (_formKey.currentState!.validate()) {
                     try {
                       await context.read<AuthProvider>().registerUser(
                         email: _userIdController.text,
                         password: _passwordController.text,
-                      );
-
-                      Navigator.pushAndRemoveUntil(
-                        context,
-                        MaterialPageRoute(builder: (context) => HomeScreen()),
-                            (route) => false,
+                        username: _usernameController.text,
+                        full_name: _fullNameController.text,
                       );
                     } catch (error) {
                       if (!context.mounted) return;
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(error.toString())),
-                      );
+                      ScaffoldMessenger.of(
+                        context,
+                      ).showSnackBar(SnackBar(content: Text(error.toString())));
                     }
                   }
                 },

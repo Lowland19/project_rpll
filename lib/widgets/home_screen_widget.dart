@@ -44,7 +44,7 @@ class HomeScreenWidget extends StatelessWidget {
                       children: [
                         Icon(Icons.book),
                         SizedBox(height: 24,),
-                        Text('Laporan')
+                        Text('Pengaduan')
                       ],
                     ),
                   )
@@ -56,9 +56,9 @@ class HomeScreenWidget extends StatelessWidget {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.local_shipping),
+                          Icon(Icons.calendar_month),
                           SizedBox(height: 24,),
-                          Text('Pengiriman')
+                          Text('Jadwal')
                         ],
                       ),
                     )

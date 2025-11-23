@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:project_rpll/screens/menu_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class FormMenuScreen extends StatefulWidget {
@@ -26,7 +27,7 @@ class _FormMenuScreenState extends State<FormMenuScreen> {
         'hari_tersedia': hariTersedia,
       });
 
-      Navigator.pop(context, true);
+      Navigator.pop(context);
     } catch (e) {
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text("Gagal menambah menu: $e")));

@@ -46,4 +46,12 @@ class AuthProvider extends ChangeNotifier {
       return e.toString();
     }
   }
+
+  Future<void> forgotPassword(String email) async {
+    try {
+      await Supabase.instance.client.auth.resetPasswordForEmail(email);
+    } catch (e) {
+      throw Exception("Gagal mengirim reset password: $e");
+    }
+  }
 }

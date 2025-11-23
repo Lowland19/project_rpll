@@ -19,6 +19,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
       body: Stack(
         children: [
           Container(decoration: const BoxDecoration(color: Color(0xFF3B0E0E))),
+
           Positioned(
             top: -50,
             left: -40,
@@ -31,7 +32,31 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
               ),
             ),
           ),
+
           _buildContent(),
+
+          // === Kontak Bantuan (INI POSISI YANG BENAR) ===
+          const Positioned(
+            bottom: 20,
+            left: 20,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Kontak Bantuan:",
+                  style: TextStyle(color: Colors.white, fontSize: 12),
+                ),
+                Text(
+                  "Email : sppg_support@mbg.go.id",
+                  style: TextStyle(color: Colors.white, fontSize: 11),
+                ),
+                Text(
+                  "Telepon : 0812-3456-7890",
+                  style: TextStyle(color: Colors.white, fontSize: 11),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -50,6 +75,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
               style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 20),
+
             TextFormField(
               controller: _emailController,
               style: const TextStyle(color: Colors.white),
@@ -60,9 +86,13 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                 enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.white)),
                 focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.white)),
               ),
-              validator: (value) => (value == null || value.isEmpty) ? "Email tidak boleh kosong" : null,
+              validator: (value) => (value == null || value.isEmpty)
+                  ? "Email tidak boleh kosong"
+                  : null,
             ),
+
             const SizedBox(height: 20),
+
             SizedBox(
               width: 200,
               child: ElevatedButton(
@@ -84,6 +114,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                 child: const Text("Kirim Reset", style: TextStyle(color: Colors.white)),
               ),
             ),
+
             TextButton(
               onPressed: () => Navigator.pop(context),
               child: const Text("Kembali ke Login", style: TextStyle(color: Colors.white70)),

@@ -11,6 +11,7 @@ class AdminUserScreen extends StatefulWidget {
 class _AdminUserScreenState extends State<AdminUserScreen> {
   List<Map<String, dynamic>> usersList = [];
   bool isLoading = true;
+
   final List<String> roleOptions = [
     'admin',
     'penanggungjawab_mbg',
@@ -52,9 +53,11 @@ class _AdminUserScreenState extends State<AdminUserScreen> {
         'update_user_role',
         params: {'target_user_id': userId, 'new_role_name': newRole},
       );
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Berhasil ubah role menjadi $newRole")),
       );
+
       fetchUsers();
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -66,83 +69,107 @@ class _AdminUserScreenState extends State<AdminUserScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Kelola User (Admin)')),
+
+      // ========== WARNA BACKGROUND ===============
+      backgroundColor: const Color(0xFF3B0E0E),
+
+      // ========== APPBAR ===============
+      appBar: AppBar(
+        title: const Text(
+          'Kelola User (Admin)',
+          style: TextStyle(color: Colors.white),
+        ),
+        backgroundColor: const Color(0xFF5A0E0E),
+        elevation: 2,
+        iconTheme: const IconThemeData(color: Colors.white),
+      ),
+
+      // ========== BODY LIST USER =================
       body: isLoading
-          ? Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator(color: Colors.white))
           : ListView.builder(
-              itemCount: usersList.length,
-              itemBuilder: (context, index) {
-                final user = usersList[index];
+        padding: const EdgeInsets.all(12),
+        itemCount: usersList.length,
+        itemBuilder: (context, index) {
+          final user = usersList[index];
 
-                final List rolesData = user['user_roles'] ?? [];
-                String currentRole = 'Tidak ada role';
+          final List rolesData = user['user_roles'] ?? [];
+          String currentRole = 'Tidak ada role';
 
-                if (rolesData.isNotEmpty && rolesData[0]['roles'] != null) {
-                  currentRole = rolesData[0]['roles']['nama_role'];
-                }
+          if (rolesData.isNotEmpty && rolesData[0]['roles'] != null) {
+            currentRole = rolesData[0]['roles']['nama_role'];
+          }
 
-                String? initialValue;
-                if (currentRole != null && roleOptions.contains(currentRole)) {
-                  initialValue = currentRole;
-                }
-                return Card(
-                  margin: EdgeInsets.all(8),
-                  child: Padding(
-                    padding: EdgeInsets.all(12),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          user['full_name'] ?? 'Tanpa Nama',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
-                        Text("@${user['username'] ?? '_'}"),
-                        SizedBox(height: 8),
-                        DropdownButton<String>(
-                          value: initialValue,
-                          hint: Text(currentRole),
-                          items: roleOptions.map((String role) {
-                            return DropdownMenuItem<String>(
-                              value: role,
-                              child: Text(role.toUpperCase()),
-                            );
-                          }).toList(),
-                          onChanged: (newValue) {
-                            if (newValue != null) {
-                              showDialog(
-                                context: context,
-                                builder: (c) => AlertDialog(
-                                  title: Text("Ubah Role?"),
-                                  content: Text(
-                                    "Ubah ${user['username']} menjadi $newValue?",
-                                  ),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: () => Navigator.pop(c),
-                                      child: Text('Batal'),
-                                    ),
-                                    ElevatedButton(
-                                      onPressed: () {
-                                        Navigator.pop(c);
-                                        changeRole(user['id'], newValue);
-                                      },
-                                      child: Text('Ya, ubah'),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            }
-                          },
-                        ),
-                      ],
+          String? initialValue;
+          if (currentRole.isNotEmpty &&
+              roleOptions.contains(currentRole)) {
+            initialValue = currentRole;
+          }
+
+          return Card(
+            elevation: 4,
+            margin: const EdgeInsets.symmetric(vertical: 8),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    user['full_name'] ?? 'Tanpa Nama',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
                     ),
                   ),
-                );
-              },
+                  Text("@${user['username'] ?? '_'}"),
+                  const SizedBox(height: 10),
+
+                  // DROPDOWN ROLE
+                  DropdownButton<String>(
+                    value: initialValue,
+                    hint: Text(currentRole),
+                    isExpanded: true,
+                    items: roleOptions.map((String role) {
+                      return DropdownMenuItem<String>(
+                        value: role,
+                        child: Text(role.toUpperCase()),
+                      );
+                    }).toList(),
+                    onChanged: (newValue) {
+                      if (newValue != null) {
+                        showDialog(
+                          context: context,
+                          builder: (c) => AlertDialog(
+                            title: const Text("Ubah Role?"),
+                            content: Text(
+                                "Ubah ${user['username']} menjadi $newValue?"),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(c),
+                                child: const Text('Batal'),
+                              ),
+                              ElevatedButton(
+                                onPressed: () {
+                                  Navigator.pop(c);
+                                  changeRole(user['id'], newValue);
+                                },
+                                child: const Text('Ya, ubah'),
+                              ),
+                            ],
+                          ),
+                        );
+                      }
+                    },
+                  ),
+                ],
+              ),
             ),
+          );
+        },
+      ),
     );
   }
 }

@@ -11,13 +11,10 @@ class HomeScreenWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final user = Provider.of<AuthProvider>(context).user;
-    final userName = user?.userMetadata?['name'] ?? 'Pengguna';
+    final userName = user?.userMetadata?['name'] ?? 'DASHBOARD PETUGAS';
 
-    return Padding(
-      padding: EdgeInsetsGeometry.all(16),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.start,
+    return Scaffold(
+      body: Stack(
         children: [
           Text(
             "Selamat Datang,",

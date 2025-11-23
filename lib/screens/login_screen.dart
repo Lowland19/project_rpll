@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:project_rpll/providers/auth_provider.dart';
 import 'package:project_rpll/screens/home_screen.dart';
 import 'package:provider/provider.dart';
+import 'package:project_rpll/screens/forgot_password_page.dart';
+
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -154,7 +156,12 @@ class _LoginScreenState extends State<LoginScreen> {
                     width: 200,
                     child: TextButton(
                       onPressed: () {
-
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const ForgotPasswordPage(),
+                          ),
+                        );
                       },
                       child: const Text(
                         'Lupa Password?',
@@ -162,6 +169,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                   ),
+
 
                 ],
               ),

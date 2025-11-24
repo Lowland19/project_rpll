@@ -43,7 +43,7 @@ class _MenuScreenState extends State<MenuScreen> {
         content: const Text("Apakah Anda yakin ingin menghapus menu ini?"),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context, false),
+            onPressed: () => Navigator.pop(context, true),
             child: const Text("Batal"),
           ),
           TextButton(

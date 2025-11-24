@@ -19,8 +19,9 @@ class _MenuScreenState extends State<MenuScreen> {
   }
 
   Future<List<dynamic>> getDaftarMenu() async {
-    final response =
-    await Supabase.instance.client.from('daftar_menu').select();
+    final response = await Supabase.instance.client
+        .from('daftar_menu')
+        .select();
     return response;
   }
 
@@ -31,10 +32,7 @@ class _MenuScreenState extends State<MenuScreen> {
 
       appBar: AppBar(
         backgroundColor: const Color(0xFF5A0E0E),
-        title: const Text(
-          "Menu MBG",
-          style: TextStyle(color: Colors.white),
-        ),
+        title: const Text("Menu MBG", style: TextStyle(color: Colors.white)),
         iconTheme: const IconThemeData(color: Colors.white),
         actions: [
           IconButton(
@@ -69,15 +67,17 @@ class _MenuScreenState extends State<MenuScreen> {
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(
-                    child: CircularProgressIndicator(color: Colors.white));
+                  child: CircularProgressIndicator(color: Colors.white),
+                );
               }
 
               if (snapshot.hasError) {
                 return Center(
-                    child: Text(
-                      "Error: ${snapshot.error}",
-                      style: const TextStyle(color: Colors.white),
-                    ));
+                  child: Text(
+                    "Error: ${snapshot.error}",
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                );
               }
 
               if (!snapshot.hasData || snapshot.data!.isEmpty) {
@@ -108,21 +108,28 @@ class _MenuScreenState extends State<MenuScreen> {
                       title: Text(
                         menu['nama_makanan'],
                         style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 18),
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                        ),
                       ),
                       subtitle: Padding(
                         padding: const EdgeInsets.only(top: 12),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(menu['jenis_makanan'],
-                                style: const TextStyle(color: Colors.white70)),
-                            Text(menu['penerima'],
-                                style: const TextStyle(color: Colors.white70)),
-                            Text(menu['hari_tersedia'],
-                                style: const TextStyle(color: Colors.white70)),
+                            Text(
+                              "Jenis Makanan: ${menu['jenis_makanan']}",
+                              style: const TextStyle(color: Colors.white70),
+                            ),
+                            Text(
+                              "Penerima: ${menu['penerima']}",
+                              style: const TextStyle(color: Colors.white70),
+                            ),
+                            Text(
+                              "Hari Tersedia: ${menu['hari_tersedia']}",
+                              style: const TextStyle(color: Colors.white70),
+                            ),
                           ],
                         ),
                       ),
@@ -140,7 +147,7 @@ class _MenuScreenState extends State<MenuScreen> {
                 },
               );
             },
-          )
+          ),
         ],
       ),
     );

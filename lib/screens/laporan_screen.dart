@@ -43,7 +43,8 @@ class _LaporanScreenState extends State<LaporanScreen> {
             builder: (context, snapshot) {
               if (!snapshot.hasData) {
                 return const Center(
-                    child: CircularProgressIndicator(color: Colors.white));
+                  child: CircularProgressIndicator(color: Colors.white),
+                );
               }
 
               final laporan = snapshot.data!;
@@ -62,28 +63,36 @@ class _LaporanScreenState extends State<LaporanScreen> {
                     margin: const EdgeInsets.only(bottom: 16),
                     elevation: 4,
                     child: ListTile(
-                      contentPadding:
-                      const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                      contentPadding: const EdgeInsets.symmetric(
+                        vertical: 12,
+                        horizontal: 16,
+                      ),
                       title: Text(
                         l['penerima_manfaat'],
                         style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 18),
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                        ),
                       ),
                       subtitle: Text(
                         "Kelayakan: ${l['persen_kelayakan']}",
                         style: const TextStyle(color: Colors.white70),
                       ),
-                      trailing: ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: Image.network(
-                          l['gambar'],
-                          width: 80,
-                          height: 80,
-                          fit: BoxFit.cover,
+                      trailing: SizedBox(
+                        width: 80,
+                        height: 80,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Image.network(
+                            l['gambar'],
+                            width: 80,
+                            height: 80,
+                            fit: BoxFit.cover,
+                          ),
                         ),
                       ),
+
                       onTap: () {
                         Navigator.push(
                           context,

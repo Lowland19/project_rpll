@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:project_rpll/providers/auth_provider.dart';
 import 'package:project_rpll/screens/admin_user_screen.dart';
 import 'package:project_rpll/screens/laporan_screen.dart';
 import 'package:project_rpll/screens/menu_screen.dart';
-import 'package:provider/provider.dart';
+import 'package:project_rpll/screens/pemeriksaan_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class HomeScreenWidget extends StatefulWidget {
@@ -17,12 +16,10 @@ class _HomeScreenWidgetState extends State<HomeScreenWidget> {
   String displayName = '';
   String userRole = '';
 
-  @override
   Future<void> getProfileData() async {
     final supabase = Supabase.instance.client;
     final userLoggedIn = supabase.auth.currentUser;
     if (userLoggedIn != null) {
-      print("🔍 [DEBUG] User ID Login: ${userLoggedIn.id}");
       try {
         final data = await supabase
             .from('profiles')
@@ -32,7 +29,6 @@ class _HomeScreenWidgetState extends State<HomeScreenWidget> {
         setState(() {
           displayName = data['username'] ?? 'Dashboard Petugas';
         });
-        print("✅ [DEBUG] Data Ditemukan: $data");
         if (mounted) {
           setState(() {
             displayName = data['username'] ?? 'User';
@@ -43,7 +39,6 @@ class _HomeScreenWidgetState extends State<HomeScreenWidget> {
             } else {
               userRole = 'pendatang';
             }
-            print("🔍 DEBUG ROLE: '$userRole'");
           });
         }
       } catch (e) {
@@ -79,7 +74,12 @@ class _HomeScreenWidgetState extends State<HomeScreenWidget> {
         'title': "Pemeriksaan",
         'icon': Icons.search,
         'allowed_roles': ['penanggungjawab_mbg'],
-        'action': () {},
+        'action': () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => PemeriksaanScreen()),
+          );
+        },
       },
       {
         'title': "Menu MBG",

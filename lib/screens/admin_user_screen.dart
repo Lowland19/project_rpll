@@ -11,6 +11,7 @@ class AdminUserScreen extends StatefulWidget {
 class _AdminUserScreenState extends State<AdminUserScreen> {
   List<Map<String, dynamic>> usersList = [];
   bool isLoading = true;
+
   final List<String> roleOptions = [
     'admin',
     'penanggungjawab_mbg',
@@ -52,9 +53,11 @@ class _AdminUserScreenState extends State<AdminUserScreen> {
         'update_user_role',
         params: {'target_user_id': userId, 'new_role_name': newRole},
       );
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Berhasil ubah role menjadi $newRole")),
       );
+
       fetchUsers();
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -66,10 +69,25 @@ class _AdminUserScreenState extends State<AdminUserScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Kelola User (Admin)')),
+      // ========== WARNA BACKGROUND ===============
+      backgroundColor: const Color(0xFF3B0E0E),
+
+      // ========== APPBAR ===============
+      appBar: AppBar(
+        title: const Text(
+          'Kelola User (Admin)',
+          style: TextStyle(color: Colors.white),
+        ),
+        backgroundColor: const Color(0xFF5A0E0E),
+        elevation: 2,
+        iconTheme: const IconThemeData(color: Colors.white),
+      ),
+
+      // ========== BODY LIST USER =================
       body: isLoading
-          ? Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator(color: Colors.white))
           : ListView.builder(
+              padding: const EdgeInsets.all(12),
               itemCount: usersList.length,
               itemBuilder: (context, index) {
                 final user = usersList[index];

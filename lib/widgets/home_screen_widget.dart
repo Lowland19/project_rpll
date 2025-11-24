@@ -16,117 +16,145 @@ class HomeScreenWidget extends StatelessWidget {
     return Scaffold(
       body: Stack(
         children: [
-          Text(
-            "Selamat Datang,",
-            style: TextStyle(fontSize: 48, fontWeight: FontWeight.bold),
+          // Background utama
+          Container(
+            decoration: const BoxDecoration(
+              color: Color(0xFF3B0E0E),
+            ),
           ),
-          SizedBox(height: 16),
-          Text(
-            '$userName',
-            style: TextStyle(fontSize: 32, fontWeight: FontWeight.w400),
-          ),
-          SizedBox(height: 32),
-          Expanded(
-            child: GridView(
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                crossAxisSpacing: 16,
-                mainAxisSpacing: 16,
+
+          // Lingkaran dekoratif
+          Positioned(
+            top: -50,
+            right: -40,
+            child: Container(
+              width: 160,
+              height: 160,
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                color: Color(0xFF5A0E0E),
               ),
+            ),
+          ),
+
+          // Konten utama
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Card(
-                  elevation: 3,
-                  child: InkWell(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => LaporanScreen(),
-                        ),
-                      );
-                    },
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.book),
-                        SizedBox(height: 24),
-                        Text('Pengaduan'),
-                      ],
-                    ),
+                const SizedBox(height: 60),
+
+                Text(
+                  "Selamat Datang,",
+                  style: const TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
                   ),
                 ),
-                Card(
-                  elevation: 3,
-                  child: InkWell(
-                    onTap: () {},
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.calendar_month),
-                        SizedBox(height: 24),
-                        Text('Jadwal'),
-                      ],
-                    ),
+
+                const SizedBox(height: 8),
+
+                Text(
+                  userName,
+                  style: const TextStyle(
+                    fontSize: 24,
+                    color: Colors.white70,
                   ),
                 ),
-                Card(
-                  elevation: 3,
-                  child: InkWell(
-                    onTap: () {},
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.search),
-                        SizedBox(height: 24),
-                        Text('Pemeriksaan'),
-                      ],
-                    ),
-                  ),
-                ),
-                Card(
-                  elevation: 3,
-                  child: InkWell(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => MenuScreen()),
-                      );
-                    },
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.fastfood),
-                        SizedBox(height: 24),
-                        Text('Menu MBG'),
-                      ],
-                    ),
-                  ),
-                ),
-                Card(
-                  elevation: 3,
-                  child: InkWell(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => AdminUserScreen(),
-                        ),
-                      );
-                    },
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.person),
-                        SizedBox(height: 24),
-                        Text('Kelola User (Admin)'),
-                      ],
-                    ),
+
+                const SizedBox(height: 32),
+
+                // GRID MENU
+                Expanded(
+                  child: GridView.count(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 16,
+                    mainAxisSpacing: 16,
+                    children: [
+                      _menuCard(
+                        icon: Icons.book,
+                        title: "Pengaduan",
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => LaporanScreen()),
+                          );
+                        },
+                      ),
+                      _menuCard(
+                        icon: Icons.calendar_month,
+                        title: "Jadwal",
+                        onTap: () {},
+                      ),
+                      _menuCard(
+                        icon: Icons.search,
+                        title: "Pemeriksaan",
+                        onTap: () {},
+                      ),
+                      _menuCard(
+                        icon: Icons.fastfood,
+                        title: "Menu MBG",
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => MenuScreen()),
+                          );
+                        },
+                      ),
+                      _menuCard(
+                        icon: Icons.person,
+                        title: "Kelola User (Admin)",
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => AdminUserScreen()),
+                          );
+                        },
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  // CARD custom agar warnanya sesuai tema
+  Widget _menuCard({
+    required IconData icon,
+    required String title,
+    required VoidCallback onTap,
+  }) {
+    return Card(
+      color: const Color(0xFF5A0E0E), // warna gelap tema
+      elevation: 3,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: InkWell(
+        onTap: onTap,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              size: 40,
+              color: Colors.white, // ikon putih
+            ),
+            const SizedBox(height: 16),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Colors.white),
+            ),
+          ],
+        ),
       ),
     );
   }

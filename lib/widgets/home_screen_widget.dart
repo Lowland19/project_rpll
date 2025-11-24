@@ -4,24 +4,118 @@ import 'package:project_rpll/screens/admin_user_screen.dart';
 import 'package:project_rpll/screens/laporan_screen.dart';
 import 'package:project_rpll/screens/menu_screen.dart';
 import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-class HomeScreenWidget extends StatelessWidget {
+class HomeScreenWidget extends StatefulWidget {
   const HomeScreenWidget({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final user = Provider.of<AuthProvider>(context).user;
-    final userName = user?.userMetadata?['name'] ?? 'DASHBOARD PETUGAS';
+  State<HomeScreenWidget> createState() => _HomeScreenWidgetState();
+}
 
+class _HomeScreenWidgetState extends State<HomeScreenWidget> {
+  String displayName = '';
+  String userRole = '';
+
+  @override
+  Future<void> getProfileData() async {
+    final supabase = Supabase.instance.client;
+    final userLoggedIn = supabase.auth.currentUser;
+    if (userLoggedIn != null) {
+      print("🔍 [DEBUG] User ID Login: ${userLoggedIn.id}");
+      try {
+        final data = await supabase
+            .from('profiles')
+            .select('username,user_roles(roles(nama_role))')
+            .eq('id', userLoggedIn.id)
+            .single();
+        setState(() {
+          displayName = data['username'] ?? 'Dashboard Petugas';
+        });
+        print("✅ [DEBUG] Data Ditemukan: $data");
+        if (mounted) {
+          setState(() {
+            displayName = data['username'] ?? 'User';
+
+            final List rolesData = data['user_roles'] ?? [];
+            if (rolesData.isNotEmpty && rolesData[0]['roles'] != null) {
+              userRole = rolesData[0]['roles']['nama_role'];
+            } else {
+              userRole = 'pendatang';
+            }
+            print("🔍 DEBUG ROLE: '$userRole'");
+          });
+        }
+      } catch (e) {
+        print('Gagal ambil profil : $e');
+        setState(() {
+          displayName =
+              userLoggedIn.userMetadata?['username'] ?? 'Dashboard Petugas';
+        });
+      }
+    }
+  }
+
+  List<Map<String, dynamic>> get menuItems {
+    return [
+      {
+        'title': "Pengaduan",
+        'icon': Icons.book,
+        // Semua role boleh lihat
+        'allowed_roles': ['admin', 'penanggungjawab_mbg', 'petugas_sppg'],
+        'action': () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => LaporanScreen()),
+        ),
+      },
+      {
+        'title': "Jadwal",
+        'icon': Icons.calendar_month,
+        // Supir & Pendatang tidak butuh lihat jadwal
+        'allowed_roles': ['sopir', 'admin', 'penanggungjawab_mbg'],
+        'action': () {},
+      },
+      {
+        'title': "Pemeriksaan",
+        'icon': Icons.search,
+        'allowed_roles': ['penanggungjawab_mbg'],
+        'action': () {},
+      },
+      {
+        'title': "Menu MBG",
+        'icon': Icons.fastfood,
+        // Hanya Admin & PJ MBG
+        'allowed_roles': ['admin', 'penanggungjawab_mbg'],
+        'action': () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => MenuScreen()),
+        ),
+      },
+      {
+        'title': "Kelola User (Admin)",
+        'icon': Icons.person,
+        // KHUSUS ADMIN
+        'allowed_roles': ['admin'],
+        'action': () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => AdminUserScreen()),
+        ),
+      },
+    ];
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    getProfileData();
+  }
+
+  Widget build(BuildContext context) {
     return Scaffold(
       body: Stack(
         children: [
           // Background utama
-          Container(
-            decoration: const BoxDecoration(
-              color: Color(0xFF3B0E0E),
-            ),
-          ),
+          Container(decoration: const BoxDecoration(color: Color(0xFF3B0E0E))),
 
           // Lingkaran dekoratif
           Positioned(
@@ -57,11 +151,8 @@ class HomeScreenWidget extends StatelessWidget {
                 const SizedBox(height: 8),
 
                 Text(
-                  userName,
-                  style: const TextStyle(
-                    fontSize: 24,
-                    color: Colors.white70,
-                  ),
+                  displayName,
+                  style: const TextStyle(fontSize: 24, color: Colors.white70),
                 ),
 
                 const SizedBox(height: 32),
@@ -72,51 +163,19 @@ class HomeScreenWidget extends StatelessWidget {
                     crossAxisCount: 2,
                     crossAxisSpacing: 16,
                     mainAxisSpacing: 16,
-                    children: [
-                      _menuCard(
-                        icon: Icons.book,
-                        title: "Pengaduan",
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => LaporanScreen()),
+                    children: menuItems
+                        .where((menu) {
+                          List<String> allowed = menu['allowed_roles'];
+                          return allowed.contains(userRole);
+                        })
+                        .map((menu) {
+                          return _menuCard(
+                            icon: menu['icon'],
+                            title: menu['title'],
+                            onTap: menu['action'],
                           );
-                        },
-                      ),
-                      _menuCard(
-                        icon: Icons.calendar_month,
-                        title: "Jadwal",
-                        onTap: () {},
-                      ),
-                      _menuCard(
-                        icon: Icons.search,
-                        title: "Pemeriksaan",
-                        onTap: () {},
-                      ),
-                      _menuCard(
-                        icon: Icons.fastfood,
-                        title: "Menu MBG",
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => MenuScreen()),
-                          );
-                        },
-                      ),
-                      _menuCard(
-                        icon: Icons.person,
-                        title: "Kelola User (Admin)",
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => AdminUserScreen()),
-                          );
-                        },
-                      ),
-                    ],
+                        })
+                        .toList(),
                   ),
                 ),
               ],

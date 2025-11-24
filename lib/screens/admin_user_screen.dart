@@ -15,7 +15,7 @@ class _AdminUserScreenState extends State<AdminUserScreen> {
     'admin',
     'penanggungjawab_mbg',
     'pendatang',
-    'supir',
+    'sopir',
     'petugas_sppg',
   ];
 
@@ -80,11 +80,12 @@ class _AdminUserScreenState extends State<AdminUserScreen> {
                 if (rolesData.isNotEmpty && rolesData[0]['roles'] != null) {
                   currentRole = rolesData[0]['roles']['nama_role'];
                 }
-
                 String? initialValue;
+
                 if (currentRole != null && roleOptions.contains(currentRole)) {
                   initialValue = currentRole;
                 }
+
                 return Card(
                   margin: EdgeInsets.all(8),
                   child: Padding(
@@ -107,7 +108,9 @@ class _AdminUserScreenState extends State<AdminUserScreen> {
                           items: roleOptions.map((String role) {
                             return DropdownMenuItem<String>(
                               value: role,
-                              child: Text(role.toUpperCase()),
+                              child: Text(
+                                role.replaceAll('_', ' ').toUpperCase(),
+                              ),
                             );
                           }).toList(),
                           onChanged: (newValue) {

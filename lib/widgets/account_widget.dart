@@ -6,24 +6,55 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AccountWidget extends StatefulWidget {
   const AccountWidget({super.key});
-  
+
   @override
   State<AccountWidget> createState() => _AccountWidgetState();
 }
 
-Future<void> getUserData() async {
-  final supabase = Supabase.instance.client;
-  final user = supabase.auth.currentUser;
-  if (user == null) {
-    print('user belum login');
-  }
-  try{
-    final data = await supabase.from('profiles').select('username').eq('id', user.id).single();
-  }
-}
-
 class _AccountWidgetState extends State<AccountWidget> {
-  final userLoggedIn = Supabase.instance.client.auth.currentUser;
+  String username = 'memuat...';
+  String email = 'memuat...';
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchUserData();
+  }
+
+  Future<void> _fetchUserData() async {
+    final supabase = Supabase.instance.client;
+    final user = supabase.auth.currentUser;
+
+    if (user != null) {
+      if (mounted) {
+        setState(() {
+          email = user.email ?? '_';
+        });
+      }
+
+      try {
+        final data = await supabase
+            .from('profiles')
+            .select('username')
+            .eq('id', user.id)
+            .single();
+        if (mounted) {
+          setState(() {
+            username = data['username'] ?? 'Tanpa Nama';
+            isLoading = false;
+          });
+        }
+      } catch (e) {
+        debugPrint('Error mengambil profil: $e');
+        setState(() {
+          username = 'Gagal memuat';
+          isLoading = false;
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -60,8 +91,8 @@ class _AccountWidgetState extends State<AccountWidget> {
                   ),
                   const SizedBox(height: 16),
 
-                  const Text(
-                    'Test',
+                  Text(
+                    username,
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
@@ -72,8 +103,8 @@ class _AccountWidgetState extends State<AccountWidget> {
 
                   const SizedBox(height: 8),
 
-                  const Text(
-                    'Test',
+                  Text(
+                    email,
                     style: TextStyle(fontSize: 16, color: Colors.white70),
                   ),
 
@@ -82,10 +113,12 @@ class _AccountWidgetState extends State<AccountWidget> {
                   // === TOMBOL EDIT PROFILE ===
                   ElevatedButton.icon(
                     onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => const EditProfile()),
-                      );
+                      // Navigator.push(
+                      //   context,
+                      //   MaterialPageRoute(
+                      //     builder: (context) => const EditProfile(),
+                      //   ),
+                      // );
                     },
                     icon: const Icon(Icons.edit),
                     label: const Text('Edit Profile'),

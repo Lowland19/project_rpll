@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:project_rpll/providers/auth_provider.dart';
+import 'package:project_rpll/screens/edit_profil.dart';
 import 'package:project_rpll/screens/start_screen.dart';
-import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AccountWidget extends StatefulWidget {
@@ -113,12 +113,10 @@ class _AccountWidgetState extends State<AccountWidget> {
                   // === TOMBOL EDIT PROFILE ===
                   ElevatedButton.icon(
                     onPressed: () {
-                      // Navigator.push(
-                      //   context,
-                      //   MaterialPageRoute(
-                      //     builder: (context) => const EditProfile(),
-                      //   ),
-                      // );
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => EditProfile()),
+                      );
                     },
                     icon: const Icon(Icons.edit),
                     label: const Text('Edit Profile'),

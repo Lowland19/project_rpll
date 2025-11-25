@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:project_rpll/providers/auth_provider.dart';
 import 'package:project_rpll/screens/start_screen.dart';
 import 'package:provider/provider.dart';
+import 'package:project_rpll/screens/edit_profil.dart'; // pastikan file ini benar
+
 
 class AccountWidget extends StatelessWidget {
   const AccountWidget({super.key});
@@ -30,12 +32,11 @@ class AccountWidget extends StatelessWidget {
             ),
           ),
 
-
           Center(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(16),
               child: Column(
-                mainAxisSize: MainAxisSize.min, // agar Column tidak mengambil seluruh tinggi
+                mainAxisSize: MainAxisSize.min,
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
@@ -45,6 +46,7 @@ class AccountWidget extends StatelessWidget {
                     height: 200,
                   ),
                   const SizedBox(height: 16),
+
                   const Text(
                     'Username',
                     style: TextStyle(
@@ -54,7 +56,9 @@ class AccountWidget extends StatelessWidget {
                     ),
                     textAlign: TextAlign.center,
                   ),
+
                   const SizedBox(height: 8),
+
                   const Text(
                     'Email',
                     style: TextStyle(
@@ -62,16 +66,27 @@ class AccountWidget extends StatelessWidget {
                       color: Colors.white70,
                     ),
                   ),
+
                   const SizedBox(height: 16),
+
+                  // === TOMBOL EDIT PROFILE ===
                   ElevatedButton.icon(
-                    onPressed: () {},
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const EditProfile()),
+                      );
+                    },
                     icon: const Icon(Icons.edit),
                     label: const Text('Edit Profile'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.red,
                     ),
                   ),
+
                   const SizedBox(height: 16),
+
+                  // === TOMBOL LOGOUT ===
                   ElevatedButton.icon(
                     onPressed: () {
                       AuthProvider().logout();

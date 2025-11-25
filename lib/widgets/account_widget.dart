@@ -2,21 +2,35 @@ import 'package:flutter/material.dart';
 import 'package:project_rpll/providers/auth_provider.dart';
 import 'package:project_rpll/screens/start_screen.dart';
 import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-class AccountWidget extends StatelessWidget {
+class AccountWidget extends StatefulWidget {
   const AccountWidget({super.key});
+  
+  @override
+  State<AccountWidget> createState() => _AccountWidgetState();
+}
 
+Future<void> getUserData() async {
+  final supabase = Supabase.instance.client;
+  final user = supabase.auth.currentUser;
+  if (user == null) {
+    print('user belum login');
+  }
+  try{
+    final data = await supabase.from('profiles').select('username').eq('id', user.id).single();
+  }
+}
+
+class _AccountWidgetState extends State<AccountWidget> {
+  final userLoggedIn = Supabase.instance.client.auth.currentUser;
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Stack(
         children: [
           // Background utama
-          Container(
-            decoration: const BoxDecoration(
-              color: Color(0xFF3B0E0E),
-            ),
-          ),
+          Container(decoration: const BoxDecoration(color: Color(0xFF3B0E0E))),
           Positioned(
             top: -50,
             left: -40,
@@ -30,12 +44,12 @@ class AccountWidget extends StatelessWidget {
             ),
           ),
 
-
           Center(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(16),
               child: Column(
-                mainAxisSize: MainAxisSize.min, // agar Column tidak mengambil seluruh tinggi
+                mainAxisSize: MainAxisSize
+                    .min, // agar Column tidak mengambil seluruh tinggi
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
@@ -46,7 +60,7 @@ class AccountWidget extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                   const Text(
-                    'Username',
+                    'Test',
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
@@ -56,11 +70,8 @@ class AccountWidget extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   const Text(
-                    'Email',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.white70,
-                    ),
+                    'Test',
+                    style: TextStyle(fontSize: 16, color: Colors.white70),
                   ),
                   const SizedBox(height: 16),
                   ElevatedButton.icon(

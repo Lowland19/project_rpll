@@ -5,6 +5,7 @@ import 'package:project_rpll/screens/menu_screen.dart';
 import 'package:project_rpll/screens/pemeriksaan_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+
 class HomeScreenWidget extends StatefulWidget {
   const HomeScreenWidget({super.key});
 
@@ -54,24 +55,34 @@ class _HomeScreenWidgetState extends State<HomeScreenWidget> {
   List<Map<String, dynamic>> get menuItems {
     return [
       {
-        'title': "Pengaduan",
+        'title': "Daftar Pengaduan",
         'icon': Icons.book,
-        // Semua role boleh lihat
-        'allowed_roles': ['admin', 'penanggungjawab_mbg', 'petugas_sppg'],
+        'allowed_roles': ['admin', 'petugas_sppg'],
         'action': () => Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => LaporanScreen()),
         ),
       },
       {
-        'title': "Jadwal",
+        'title': "Jadwal Pengiriman",
         'icon': Icons.calendar_month,
-        // Supir & Pendatang tidak butuh lihat jadwal
-        'allowed_roles': ['sopir', 'admin', 'penanggungjawab_mbg'],
+        'allowed_roles': ['sopir', 'admin'],
         'action': () {},
       },
       {
-        'title': "Pemeriksaan",
+        'title': "Perkiraan Waktu Datang",
+        'icon': Icons.calendar_month,
+        'allowed_roles': ['penanggungjawab_mbg', 'admin'],
+        'action': () {},
+      },
+      {
+        'title': "Laporan Pengembalian",
+        'icon': Icons.calendar_month,
+        'allowed_roles': ['sopir', 'admin'],
+        'action': () {},
+      },
+      {
+        'title': "Kirim Pengaduan",
         'icon': Icons.search,
         'allowed_roles': ['penanggungjawab_mbg'],
         'action': () {
@@ -82,10 +93,18 @@ class _HomeScreenWidgetState extends State<HomeScreenWidget> {
         },
       },
       {
-        'title': "Menu MBG",
+        'title': "Daftar Menu",
         'icon': Icons.fastfood,
-        // Hanya Admin & PJ MBG
-        'allowed_roles': ['admin', 'penanggungjawab_mbg'],
+        'allowed_roles': ['admin','petugas_sppg' ],
+        'action': () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => MenuScreen()),
+        ),
+      },
+      {
+        'title': "Daftar Penerima",
+        'icon': Icons.book,
+        'allowed_roles': ['admin','petugas_sppg' ],
         'action': () => Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => MenuScreen()),
@@ -94,7 +113,6 @@ class _HomeScreenWidgetState extends State<HomeScreenWidget> {
       {
         'title': "Kelola User (Admin)",
         'icon': Icons.person,
-        // KHUSUS ADMIN
         'allowed_roles': ['admin'],
         'action': () => Navigator.push(
           context,
@@ -186,14 +204,14 @@ class _HomeScreenWidgetState extends State<HomeScreenWidget> {
     );
   }
 
-  // CARD custom agar warnanya sesuai tema
+
   Widget _menuCard({
     required IconData icon,
     required String title,
     required VoidCallback onTap,
   }) {
     return Card(
-      color: const Color(0xFF5A0E0E), // warna gelap tema
+      color: const Color(0xFF5A0E0E),
       elevation: 3,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: InkWell(
@@ -204,7 +222,7 @@ class _HomeScreenWidgetState extends State<HomeScreenWidget> {
             Icon(
               icon,
               size: 40,
-              color: Colors.white, // ikon putih
+              color: Colors.white,
             ),
             const SizedBox(height: 16),
             Text(

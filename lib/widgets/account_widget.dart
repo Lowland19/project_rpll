@@ -17,8 +17,6 @@ class AccountWidget extends StatelessWidget {
               color: Color(0xFF3B0E0E),
             ),
           ),
-
-          // Background dekoratif lingkaran atas
           Positioned(
             top: -50,
             left: -40,
@@ -32,7 +30,7 @@ class AccountWidget extends StatelessWidget {
             ),
           ),
 
-          // Konten utama di tengah
+
           Center(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(16),

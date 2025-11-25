@@ -59,6 +59,7 @@ class _AccountWidgetState extends State<AccountWidget> {
                     height: 200,
                   ),
                   const SizedBox(height: 16),
+
                   const Text(
                     'Test',
                     style: TextStyle(
@@ -68,21 +69,34 @@ class _AccountWidgetState extends State<AccountWidget> {
                     ),
                     textAlign: TextAlign.center,
                   ),
+
                   const SizedBox(height: 8),
+
                   const Text(
                     'Test',
                     style: TextStyle(fontSize: 16, color: Colors.white70),
                   ),
+
                   const SizedBox(height: 16),
+
+                  // === TOMBOL EDIT PROFILE ===
                   ElevatedButton.icon(
-                    onPressed: () {},
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const EditProfile()),
+                      );
+                    },
                     icon: const Icon(Icons.edit),
                     label: const Text('Edit Profile'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.red,
                     ),
                   ),
+
                   const SizedBox(height: 16),
+
+                  // === TOMBOL LOGOUT ===
                   ElevatedButton.icon(
                     onPressed: () {
                       AuthProvider().logout();

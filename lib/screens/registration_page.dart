@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:project_rpll/screens/home_screen.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/auth_provider.dart';
-import 'home_screen.dart';
 
 class RegistrationPage extends StatefulWidget {
   const RegistrationPage({super.key});
@@ -18,7 +18,6 @@ class _RegistrationPageState extends State<RegistrationPage> {
   final _passwordController = TextEditingController();
   final _alamatController = TextEditingController();
   final _usernameController = TextEditingController();
-  final _fullNameController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -129,30 +128,6 @@ class _RegistrationPageState extends State<RegistrationPage> {
               },
             ),
             SizedBox(height: 16),
-            TextFormField(
-              controller: _fullNameController,
-              style: const TextStyle(color: Colors.white),
-              decoration: const InputDecoration(
-                labelText: 'Nama Lengkap Pengguna',
-                labelStyle: TextStyle(color: Colors.white),
-                prefixIcon: Icon(Icons.home, color: Colors.white),
-                hintText: 'Masukkan nama lengkap pengguna',
-                hintStyle: TextStyle(color: Colors.white70),
-                enabledBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.white),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.white),
-                ),
-              ),
-              textInputAction: TextInputAction.done,
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Nama lengkap pengguna tidak boleh kosong';
-                }
-                return null;
-              },
-            ),
 
             const SizedBox(height: 16),
             TextFormField(
@@ -220,10 +195,13 @@ class _RegistrationPageState extends State<RegistrationPage> {
                   if (_formKey.currentState!.validate()) {
                     try {
                       await context.read<AuthProvider>().registerUser(
-                        email: _userIdController.text,
-                        password: _passwordController.text,
-                        username: _usernameController.text,
-                        full_name: _fullNameController.text,
+                        email: _userIdController.text.trim(),
+                        password: _passwordController.text.trim(),
+                        username: _usernameController.text.trim(),
+                      );
+                      Navigator.push(
+                        (context),
+                        MaterialPageRoute(builder: (context) => HomeScreen()),
                       );
                     } catch (error) {
                       if (!context.mounted) return;

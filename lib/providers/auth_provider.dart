@@ -29,13 +29,12 @@ class AuthProvider extends ChangeNotifier {
     required String email,
     required String password,
     required String username,
-    required String full_name,
   }) async {
     try {
       final response = await Supabase.instance.client.auth.signUp(
         email: email,
         password: password,
-        data: {'username': username, 'full_name': full_name},
+        data: {'username': username},
       );
       if (response.user != null) {
         return null;
@@ -46,6 +45,7 @@ class AuthProvider extends ChangeNotifier {
       return e.toString();
     }
   }
+
   Future<void> forgotPassword(String email) async {
     try {
       await Supabase.instance.client.auth.resetPasswordForEmail(email);

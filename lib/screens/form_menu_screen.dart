@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:project_rpll/screens/menu_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class FormMenuScreen extends StatefulWidget {
@@ -29,8 +28,9 @@ class _FormMenuScreenState extends State<FormMenuScreen> {
 
       Navigator.pop(context);
     } catch (e) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text("Gagal menambah menu: $e")));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Gagal menambah menu: $e")));
     }
   }
 
@@ -76,8 +76,8 @@ class _FormMenuScreenState extends State<FormMenuScreen> {
                 ),
                 const SizedBox(height: 16),
                 DropdownButtonFormField<String>(
-                    initialValue: 'Sumber karbohidrat',
-                    dropdownColor: const Color(0xFF5A0E0E),
+                  initialValue: 'Sumber karbohidrat',
+                  dropdownColor: const Color(0xFF5A0E0E),
                   style: const TextStyle(color: Colors.white),
                   decoration: InputDecoration(
                     labelText: "Jenis Makanan",
@@ -91,37 +91,57 @@ class _FormMenuScreenState extends State<FormMenuScreen> {
                   onChanged: (value) {
                     setState(() => jenisMakanan = value);
                   },
-                    items: const [
-                      DropdownMenuItem(
-                        value: 'Sumber karbohidrat',
-                        child: Text('Sumber karbohidrat', style: TextStyle(color: Colors.white)),
+                  items: const [
+                    DropdownMenuItem(
+                      value: 'Sumber karbohidrat',
+                      child: Text(
+                        'Sumber karbohidrat',
+                        style: TextStyle(color: Colors.white),
                       ),
-                      DropdownMenuItem(
-                        value: 'Protein hewani',
-                        child: Text('Protein hewani', style: TextStyle(color: Colors.white)),
+                    ),
+                    DropdownMenuItem(
+                      value: 'Protein hewani',
+                      child: Text(
+                        'Protein hewani',
+                        style: TextStyle(color: Colors.white),
                       ),
-                      DropdownMenuItem(
-                        value: 'Protein nabati',
-                        child: Text('Protein nabati', style: TextStyle(color: Colors.white)),
+                    ),
+                    DropdownMenuItem(
+                      value: 'Protein nabati',
+                      child: Text(
+                        'Protein nabati',
+                        style: TextStyle(color: Colors.white),
                       ),
-                      DropdownMenuItem(
-                        value: 'Sayur',
-                        child: Text('Sayur', style: TextStyle(color: Colors.white)),
+                    ),
+                    DropdownMenuItem(
+                      value: 'Sayur',
+                      child: Text(
+                        'Sayur',
+                        style: TextStyle(color: Colors.white),
                       ),
-                      DropdownMenuItem(
-                        value: 'Buah',
-                        child: Text('Buah', style: TextStyle(color: Colors.white)),
+                    ),
+                    DropdownMenuItem(
+                      value: 'Buah',
+                      child: Text(
+                        'Buah',
+                        style: TextStyle(color: Colors.white),
                       ),
-                      DropdownMenuItem(
-                        value: 'Sumber lemak',
-                        child: Text('Sumber lemak', style: TextStyle(color: Colors.white)),
+                    ),
+                    DropdownMenuItem(
+                      value: 'Sumber lemak',
+                      child: Text(
+                        'Sumber lemak',
+                        style: TextStyle(color: Colors.white),
                       ),
-                      DropdownMenuItem(
-                        value: 'Susu',
-                        child: Text('Susu', style: TextStyle(color: Colors.white)),
+                    ),
+                    DropdownMenuItem(
+                      value: 'Susu',
+                      child: Text(
+                        'Susu',
+                        style: TextStyle(color: Colors.white),
                       ),
-                    ]
-
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 16),
                 DropdownButtonFormField<String>(
@@ -142,20 +162,40 @@ class _FormMenuScreenState extends State<FormMenuScreen> {
                   },
                   items: const [
                     DropdownMenuItem(
-                        value: 'Senin',
-                        child: Text('Senin', style: TextStyle(color: Colors.white))),
+                      value: 'Senin',
+                      child: Text(
+                        'Senin',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
                     DropdownMenuItem(
-                        value: 'Selasa',
-                        child: Text('Selasa', style: TextStyle(color: Colors.white))),
+                      value: 'Selasa',
+                      child: Text(
+                        'Selasa',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
                     DropdownMenuItem(
-                        value: 'Rabu',
-                        child: Text('Rabu', style: TextStyle(color: Colors.white))),
+                      value: 'Rabu',
+                      child: Text(
+                        'Rabu',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
                     DropdownMenuItem(
-                        value: 'Kamis',
-                        child: Text('Kamis', style: TextStyle(color: Colors.white))),
+                      value: 'Kamis',
+                      child: Text(
+                        'Kamis',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
                     DropdownMenuItem(
-                        value: 'Jumat',
-                        child: Text('Jumat', style: TextStyle(color: Colors.white))),
+                      value: 'Jumat',
+                      child: Text(
+                        'Jumat',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 16),

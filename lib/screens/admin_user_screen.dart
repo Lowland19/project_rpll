@@ -100,7 +100,7 @@ class _AdminUserScreenState extends State<AdminUserScreen> {
                 }
                 String? initialValue;
 
-                if (currentRole != null && roleOptions.contains(currentRole)) {
+                if (roleOptions.contains(currentRole)) {
                   initialValue = currentRole;
                 }
 

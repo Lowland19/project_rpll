@@ -14,7 +14,6 @@ class HasilPemeriksaanScreen extends StatefulWidget {
 class _HasilPemeriksaanScreenState extends State<HasilPemeriksaanScreen> {
   final TextEditingController _deskripsiController = TextEditingController();
   final TextEditingController _penerimaController = TextEditingController();
-  bool _isLoading = false;
 
   Future<String?> uploadImage(String filePath) async {
     try {
@@ -41,7 +40,6 @@ class _HasilPemeriksaanScreenState extends State<HasilPemeriksaanScreen> {
       ).showSnackBar(const SnackBar(content: Text('Harap isi semua kolom!')));
       return;
     }
-    setState(() => _isLoading = true);
     final supabase = Supabase.instance.client;
 
     try {
@@ -79,7 +77,6 @@ class _HasilPemeriksaanScreenState extends State<HasilPemeriksaanScreen> {
 
   @override
   Widget build(BuildContext context) {
-    bool isUploading = false;
     return Scaffold(
       appBar: AppBar(title: Text('Hasil Pemeriksaan')),
       body: Column(

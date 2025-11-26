@@ -14,6 +14,7 @@ class AccountWidget extends StatefulWidget {
 class _AccountWidgetState extends State<AccountWidget> {
   String username = 'memuat...';
   String email = 'memuat...';
+  String avatarUrl = '';
   bool isLoading = true;
 
   @override
@@ -36,12 +37,13 @@ class _AccountWidgetState extends State<AccountWidget> {
       try {
         final data = await supabase
             .from('profiles')
-            .select('username')
+            .select('username,avatar_url')
             .eq('id', user.id)
             .single();
         if (mounted) {
           setState(() {
             username = data['username'] ?? 'Tanpa Nama';
+            avatarUrl = data['avatar_url'];
             isLoading = false;
           });
         }
@@ -58,96 +60,100 @@ class _AccountWidgetState extends State<AccountWidget> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Stack(
-        children: [
-          // Background utama
-          Container(decoration: const BoxDecoration(color: Color(0xFF3B0E0E))),
-          Positioned(
-            top: -50,
-            left: -40,
-            child: Container(
-              width: 170,
-              height: 170,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                color: Color(0xFF5A0E0E),
-              ),
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Stack(
+              children: [
+                // Background utama
+                Container(
+                  decoration: const BoxDecoration(color: Color(0xFF3B0E0E)),
+                ),
+                Positioned(
+                  top: -50,
+                  left: -40,
+                  child: Container(
+                    width: 170,
+                    height: 170,
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Color(0xFF5A0E0E),
+                    ),
+                  ),
+                ),
+
+                Center(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      mainAxisSize: MainAxisSize
+                          .min, // agar Column tidak mengambil seluruh tinggi
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Image.network(avatarUrl, width: 200, height: 200),
+                        const SizedBox(height: 16),
+
+                        Text(
+                          username,
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+
+                        const SizedBox(height: 8),
+
+                        Text(
+                          email,
+                          style: TextStyle(fontSize: 16, color: Colors.white70),
+                        ),
+
+                        const SizedBox(height: 16),
+
+                        // === TOMBOL EDIT PROFILE ===
+                        ElevatedButton.icon(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => EditProfile(),
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.edit),
+                          label: const Text('Edit Profile'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red,
+                          ),
+                        ),
+
+                        const SizedBox(height: 16),
+
+                        // === TOMBOL LOGOUT ===
+                        ElevatedButton.icon(
+                          onPressed: () {
+                            AuthProvider().logout();
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => StartScreen(),
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.logout),
+                          label: const Text('Logout'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ),
-
-          Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                mainAxisSize: MainAxisSize
-                    .min, // agar Column tidak mengambil seluruh tinggi
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Image.network(
-                    'https://thumbs.dreamstime.com/b/creative-illustration-default-avatar-profile-placeholder-isolated-background-art-design-grey-photo-blank-template-mockup-144855718.jpg',
-                    width: 200,
-                    height: 200,
-                  ),
-                  const SizedBox(height: 16),
-
-                  Text(
-                    username,
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-
-                  const SizedBox(height: 8),
-
-                  Text(
-                    email,
-                    style: TextStyle(fontSize: 16, color: Colors.white70),
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // === TOMBOL EDIT PROFILE ===
-                  ElevatedButton.icon(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => EditProfile()),
-                      );
-                    },
-                    icon: const Icon(Icons.edit),
-                    label: const Text('Edit Profile'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red,
-                    ),
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // === TOMBOL LOGOUT ===
-                  ElevatedButton.icon(
-                    onPressed: () {
-                      AuthProvider().logout();
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(builder: (context) => StartScreen()),
-                      );
-                    },
-                    icon: const Icon(Icons.logout),
-                    label: const Text('Logout'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

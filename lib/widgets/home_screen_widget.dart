@@ -4,6 +4,11 @@ import 'package:project_rpll/screens/laporan_screen.dart';
 import 'package:project_rpll/screens/menu_screen.dart';
 import 'package:project_rpll/screens/pemeriksaan_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:project_rpll/screens/jadwal_pengiriman.dart';
+import 'package:project_rpll/screens/laporan_pengembalian.dart';
+import 'package:project_rpll/screens/daftar_penerima.dart';
+import 'package:project_rpll/screens/rute_perkiraan_waktu.dart';
+
 
 
 class HomeScreenWidget extends StatefulWidget {
@@ -67,19 +72,35 @@ class _HomeScreenWidgetState extends State<HomeScreenWidget> {
         'title': "Jadwal Pengiriman",
         'icon': Icons.calendar_month,
         'allowed_roles': ['sopir', 'admin'],
-        'action': () {},
+        'action': () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const JadwalPengirimanScreen()),
+        ),
       },
+
       {
         'title': "Perkiraan Waktu Datang",
         'icon': Icons.calendar_month,
         'allowed_roles': ['penanggungjawab_mbg', 'admin'],
-        'action': () {},
+        'action': () => Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => RutePerkiraanWaktuScreen(
+              jam: "09.30",
+              sekolah: "SMA 3",
+            ),
+          ),
+        ),
+
       },
       {
         'title': "Laporan Pengembalian",
         'icon': Icons.calendar_month,
         'allowed_roles': ['sopir', 'admin'],
-        'action': () {},
+        'action': () => Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const LaporanPengembalian()),
+      ),
       },
       {
         'title': "Kirim Pengaduan",
@@ -107,7 +128,7 @@ class _HomeScreenWidgetState extends State<HomeScreenWidget> {
         'allowed_roles': ['admin','petugas_sppg' ],
         'action': () => Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => MenuScreen()),
+          MaterialPageRoute(builder: (_) => const DaftarPenerimaScreen()),
         ),
       },
       {

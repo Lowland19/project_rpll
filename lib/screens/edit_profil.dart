@@ -225,14 +225,6 @@ class _EditProfileState extends State<EditProfile> {
                               ),
                             ),
                           ),
-                          const Text(
-                            "Save",
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
                         ],
                       ),
 

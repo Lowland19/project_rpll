@@ -18,6 +18,9 @@ class _EditProfileState extends State<EditProfile> {
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController alamatController = TextEditingController();
+  final TextEditingController lembagaController = TextEditingController();
+  final TextEditingController jumlahPenerimaController =
+      TextEditingController();
 
   bool _isLoading = true;
   bool _isSaving = false;
@@ -26,7 +29,14 @@ class _EditProfileState extends State<EditProfile> {
   String _currentUserRole = '';
   double? _latitude;
   double? _longitude;
+  String? lembaga;
+  int? jumlahPenerima;
   final List<String> roleWithLocation = ['penanggungjawab_mbg', 'petugas_sppg'];
+  final List<String> roleWithLembaga = ['penanggungjawab_mbg', 'petugas_sppg'];
+  final List<String> roleWithJumlahPenerima = [
+    'penanggungjawab_mbg',
+    'petugas_sppg',
+  ];
 
   @override
   void initState() {
@@ -160,6 +170,9 @@ class _EditProfileState extends State<EditProfile> {
         final alamat = roleWithLocation.contains(_currentUserRole)
             ? alamatController.text.trim()
             : null;
+        final lembaga = lembagaController.text;
+        final textInputJumlahPenerima = jumlahPenerimaController.text;
+        final jumlahPenerima = int.tryParse(textInputJumlahPenerima);
 
         UserAttributes attributes = UserAttributes();
         bool needUpdateAuth = false;
@@ -190,6 +203,8 @@ class _EditProfileState extends State<EditProfile> {
               'avatar_url': newAvatarUrl,
               'longitude': _longitude,
               'latitude': _latitude,
+              'lembaga': lembaga,
+              'jumlah_penerima': jumlahPenerima,
             })
             .eq('id', user.id);
         if (mounted) {
@@ -218,6 +233,8 @@ class _EditProfileState extends State<EditProfile> {
   @override
   Widget build(BuildContext context) {
     bool showLocationField = roleWithLocation.contains(_currentUserRole);
+    bool showLembagaField = roleWithLembaga.contains(_currentUserRole);
+    bool showPenerimaField = roleWithJumlahPenerima.contains(_currentUserRole);
     return Scaffold(
       backgroundColor: const Color(0xFF3B0E0E),
       body: _isLoading
@@ -326,6 +343,17 @@ class _EditProfileState extends State<EditProfile> {
                       const SizedBox(height: 16),
                       if (showLocationField) ...[
                         _buildField("Alamat / Lokasi", alamatController),
+                        const SizedBox(height: 16),
+                      ],
+                      if (showLembagaField) ...[
+                        _buildField("Nama Lembaga", lembagaController),
+                        const SizedBox(height: 16),
+                      ],
+                      if (showPenerimaField) ...[
+                        _buildField(
+                          "Jumlah Penerima",
+                          jumlahPenerimaController,
+                        ),
                         const SizedBox(height: 16),
                       ],
 

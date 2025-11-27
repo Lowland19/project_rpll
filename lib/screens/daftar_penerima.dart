@@ -14,7 +14,7 @@ class DaftarPenerimaScreen extends StatelessWidget {
     {"nama": "TK Pamekar Budi", "jumlah": 52, "jarak": "1.2 km"},
     {"nama": "PAUD Melati 10", "jumlah": 47, "jarak": "8.8 km"},
     {"nama": "PAUD Darul Falah", "jumlah": 46, "jarak": "800 m"},
-    {"nama": "Kober Qurrotu’ain Al Istiqomah", "jumlah": 45, "jarak": "5 km"},
+    {"nama": "Kober Qurrotu'ain Al Istiqomah", "jumlah": 45, "jarak": "5 km"},
     {"nama": "PAUD Mawar Putih", "jumlah": 30, "jarak": "1.6 km"},
     {"nama": "PAUD Kenanga 12", "jumlah": 27, "jarak": "7.7 km"},
     {"nama": "RA Darul Hufadz", "jumlah": 27, "jarak": "1 km"},
@@ -78,8 +78,10 @@ class DaftarPenerimaScreen extends StatelessWidget {
                     children: [
                       GestureDetector(
                         onTap: () => Navigator.pop(context),
-                        child:
-                        const Icon(Icons.arrow_back_ios, color: Colors.white),
+                        child: const Icon(
+                          Icons.arrow_back_ios,
+                          color: Colors.white,
+                        ),
                       ),
                     ],
                   ),
@@ -105,7 +107,6 @@ class DaftarPenerimaScreen extends StatelessWidget {
                           nama: sortedList[index]["nama"],
                           jumlah: sortedList[index]["jumlah"],
                           jarak: sortedList[index]["jarak"],
-                          img: "assets/img/default.png",
                         );
                       },
                     ),
@@ -123,7 +124,7 @@ class DaftarPenerimaScreen extends StatelessWidget {
     required String nama,
     required int jumlah,
     required String jarak,
-    required String img,
+    // required String img,
   }) {
     return Container(
       margin: const EdgeInsets.only(bottom: 15),
@@ -150,31 +151,20 @@ class DaftarPenerimaScreen extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   "Jumlah: $jumlah",
-                  style: const TextStyle(
-                    color: Colors.white70,
-                    fontSize: 14,
-                  ),
+                  style: const TextStyle(color: Colors.white70, fontSize: 14),
                 ),
                 Text(
                   "Jarak: $jarak",
-                  style: const TextStyle(
-                    color: Colors.white70,
-                    fontSize: 14,
-                  ),
+                  style: const TextStyle(color: Colors.white70, fontSize: 14),
                 ),
               ],
             ),
           ),
 
-          ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: Image.asset(
-              img,
-              width: 55,
-              height: 55,
-              fit: BoxFit.cover,
-            ),
-          ),
+          // ClipRRect(
+          //   borderRadius: BorderRadius.circular(8),
+          //   child: Image.asset(img, width: 55, height: 55, fit: BoxFit.cover),
+          // ),
         ],
       ),
     );

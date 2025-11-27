@@ -8,8 +8,7 @@ import 'package:project_rpll/screens/jadwal_pengiriman.dart';
 import 'package:project_rpll/screens/laporan_pengembalian.dart';
 import 'package:project_rpll/screens/daftar_penerima.dart';
 import 'package:project_rpll/screens/rute_perkiraan_waktu.dart';
-
-
+import 'package:project_rpll/widgets/notifikasi_screen.dart';
 
 class HomeScreenWidget extends StatefulWidget {
   const HomeScreenWidget({super.key});
@@ -25,6 +24,7 @@ class _HomeScreenWidgetState extends State<HomeScreenWidget> {
   Future<void> getProfileData() async {
     final supabase = Supabase.instance.client;
     final userLoggedIn = supabase.auth.currentUser;
+
     if (userLoggedIn != null) {
       try {
         final data = await supabase
@@ -32,9 +32,7 @@ class _HomeScreenWidgetState extends State<HomeScreenWidget> {
             .select('username,user_roles(roles(nama_role))')
             .eq('id', userLoggedIn.id)
             .single();
-        setState(() {
-          displayName = data['username'] ?? 'Dashboard Petugas';
-        });
+
         if (mounted) {
           setState(() {
             displayName = data['username'] ?? 'User';
@@ -50,8 +48,7 @@ class _HomeScreenWidgetState extends State<HomeScreenWidget> {
       } catch (e) {
         print('Gagal ambil profil : $e');
         setState(() {
-          displayName =
-              userLoggedIn.userMetadata?['username'] ?? 'Dashboard Petugas';
+          displayName = userLoggedIn.userMetadata?['username'] ?? 'User';
         });
       }
     }
@@ -77,34 +74,30 @@ class _HomeScreenWidgetState extends State<HomeScreenWidget> {
           MaterialPageRoute(builder: (_) => const JadwalPengirimanScreen()),
         ),
       },
-
       {
         'title': "Perkiraan Waktu Datang",
-        'icon': Icons.calendar_month,
+        'icon': Icons.timer,
         'allowed_roles': ['penanggungjawab_mbg', 'admin'],
         'action': () => Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => RutePerkiraanWaktuScreen(
-              jam: "09.30",
-              sekolah: "SMA 3",
-            ),
+            builder: (_) =>
+                RutePerkiraanWaktuScreen(jam: "09.30", sekolah: "SMA 3"),
           ),
         ),
-
       },
       {
         'title': "Laporan Pengembalian",
-        'icon': Icons.calendar_month,
+        'icon': Icons.assignment_return,
         'allowed_roles': ['sopir', 'admin'],
         'action': () => Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const LaporanPengembalian()),
-      ),
+          context,
+          MaterialPageRoute(builder: (context) => const LaporanPengembalian()),
+        ),
       },
       {
         'title': "Kirim Pengaduan",
-        'icon': Icons.search,
+        'icon': Icons.send,
         'allowed_roles': ['penanggungjawab_mbg'],
         'action': () {
           Navigator.push(
@@ -116,7 +109,7 @@ class _HomeScreenWidgetState extends State<HomeScreenWidget> {
       {
         'title': "Daftar Menu",
         'icon': Icons.fastfood,
-        'allowed_roles': ['admin','petugas_sppg' ],
+        'allowed_roles': ['admin', 'petugas_sppg'],
         'action': () => Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => MenuScreen()),
@@ -124,8 +117,8 @@ class _HomeScreenWidgetState extends State<HomeScreenWidget> {
       },
       {
         'title': "Daftar Penerima",
-        'icon': Icons.book,
-        'allowed_roles': ['admin','petugas_sppg' ],
+        'icon': Icons.people,
+        'allowed_roles': ['admin', 'petugas_sppg'],
         'action': () => Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => const DaftarPenerimaScreen()),
@@ -149,14 +142,13 @@ class _HomeScreenWidgetState extends State<HomeScreenWidget> {
     getProfileData();
   }
 
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Stack(
         children: [
-          // Background utama
           Container(decoration: const BoxDecoration(color: Color(0xFF3B0E0E))),
 
-          // Lingkaran dekoratif
           Positioned(
             top: -50,
             right: -40,
@@ -170,50 +162,40 @@ class _HomeScreenWidgetState extends State<HomeScreenWidget> {
             ),
           ),
 
-          // Konten utama
           Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: 60),
-
-                Text(
+                const Text(
                   "Selamat Datang,",
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 32,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
                   ),
                 ),
-
                 const SizedBox(height: 8),
-
                 Text(
                   displayName,
                   style: const TextStyle(fontSize: 24, color: Colors.white70),
                 ),
-
                 const SizedBox(height: 32),
 
-                // GRID MENU
                 Expanded(
                   child: GridView.count(
                     crossAxisCount: 2,
                     crossAxisSpacing: 16,
                     mainAxisSpacing: 16,
                     children: menuItems
-                        .where((menu) {
-                          List<String> allowed = menu['allowed_roles'];
-                          return allowed.contains(userRole);
-                        })
-                        .map((menu) {
-                          return _menuCard(
-                            icon: menu['icon'],
-                            title: menu['title'],
-                            onTap: menu['action'],
-                          );
-                        })
+                        .where((menu) =>
+                        (menu['allowed_roles'] as List).contains(userRole))
+                        .map((menu) => _menuCard(
+                      icon: menu['icon'],
+                      title: menu['title'],
+                      onTap: menu['action'],
+                    ))
                         .toList(),
                   ),
                 ),
@@ -222,9 +204,28 @@ class _HomeScreenWidgetState extends State<HomeScreenWidget> {
           ),
         ],
       ),
+
+      // 🔔 Floating Notifikasi kiri bawah
+      floatingActionButton: Align(
+        alignment: Alignment.bottomLeft,
+        child: Padding(
+          padding: const EdgeInsets.only(left: 20, bottom: 20),
+          child: FloatingActionButton(
+            backgroundColor: const Color(0xFF3B0E0E),
+            shape: const CircleBorder(),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const NotifikasiScreen()),
+              );
+            },
+            child: const Icon(Icons.notifications, color: Colors.white, size: 28),
+          ),
+        ),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.startDocked,
     );
   }
-
 
   Widget _menuCard({
     required IconData icon,
@@ -240,17 +241,11 @@ class _HomeScreenWidgetState extends State<HomeScreenWidget> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              icon,
-              size: 40,
-              color: Colors.white,
-            ),
+            Icon(icon, size: 40, color: Colors.white),
             const SizedBox(height: 16),
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.white),
-            ),
+            Text(title,
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.white)),
           ],
         ),
       ),

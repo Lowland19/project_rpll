@@ -27,38 +27,29 @@ class _AccountWidgetState extends State<AccountWidget> {
     final supabase = Supabase.instance.client;
     final user = supabase.auth.currentUser;
 
-    if (user != null) {
+    if (user == null) return;
+
+    setState(() => email = user.email ?? '-');
+
+    try {
+      final data = await supabase
+          .from('profiles')
+          .select('username, avatar_url')
+          .eq('id', user.id)
+          .single();
+
       setState(() {
-        email = user.email ?? '-';
+        username = data['username'] ?? 'Tanpa Nama';
+        avatarUrl = data['avatar_url'] ?? ''; // langsung pakai URL dari database
+        isLoading = false;
       });
 
-      try {
-        final data = await supabase
-            .from('profiles')
-            .select('username, avatar_url')
-            .eq('id', user.id)
-            .single();
-
-        // Jika avatar di storage, convert ke public URL
-        String finalUrl = '';
-        if (data['avatar_url'] != null && data['avatar_url'].toString().isNotEmpty) {
-          finalUrl = supabase.storage.from('avatars').getPublicUrl(data['avatar_url']);
-        }
-
-        if (mounted) {
-          setState(() {
-            username = data['username'] ?? 'Tanpa Nama';
-            avatarUrl = finalUrl;
-            isLoading = false;
-          });
-        }
-      } catch (e) {
-        debugPrint('Error mengambil profil: $e');
-        setState(() {
-          username = 'Gagal memuat';
-          isLoading = false;
-        });
-      }
+    } catch (e) {
+      debugPrint('⚠ Error mengambil data profil: $e');
+      setState(() {
+        username = 'Gagal memuat';
+        isLoading = false;
+      });
     }
   }
 
@@ -69,7 +60,9 @@ class _AccountWidgetState extends State<AccountWidget> {
           ? const Center(child: CircularProgressIndicator())
           : Stack(
         children: [
-          Container(decoration: const BoxDecoration(color: Color(0xFF3B0E0E))),
+          Container(color: const Color(0xFF3B0E0E)),
+
+          // Background lingkaran
           Positioned(
             top: -50,
             left: -40,
@@ -90,15 +83,17 @@ class _AccountWidgetState extends State<AccountWidget> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
 
-                  // === Avatar yang fix error ===
+                  /// ==================== AVATAR FIX ====================
                   CircleAvatar(
                     radius: 80,
                     backgroundColor: Colors.white,
                     backgroundImage: avatarUrl.isNotEmpty
                         ? NetworkImage(avatarUrl)
-                        : const AssetImage('assets/default_avatar.png') as ImageProvider,
+                        : const NetworkImage(
+                        "https://i.ibb.co/r2vC7F4/default-avatar.png"),
                     onBackgroundImageError: (_, __) {},
                   ),
+                  /// ====================================================
 
                   const SizedBox(height: 16),
 
@@ -109,14 +104,16 @@ class _AccountWidgetState extends State<AccountWidget> {
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
                     ),
-                    textAlign: TextAlign.center,
                   ),
 
                   const SizedBox(height: 8),
 
                   Text(
                     email,
-                    style: const TextStyle(fontSize: 16, color: Colors.white70),
+                    style: const TextStyle(
+                      fontSize: 16,
+                      color: Colors.white70,
+                    ),
                   ),
 
                   const SizedBox(height: 20),
@@ -126,11 +123,13 @@ class _AccountWidgetState extends State<AccountWidget> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(builder: (_) => EditProfile()),
-                      ).then((_) => _fetchUserData()); // Refresh setelah edit
+                      ).then((_) => _fetchUserData()); // refresh setelah edit
                     },
                     icon: const Icon(Icons.edit),
                     label: const Text('Edit Profile'),
-                    style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                    ),
                   ),
 
                   const SizedBox(height: 12),
@@ -145,8 +144,10 @@ class _AccountWidgetState extends State<AccountWidget> {
                     },
                     icon: const Icon(Icons.logout),
                     label: const Text('Logout'),
-                    style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                  )
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                    ),
+                  ),
                 ],
               ),
             ),

@@ -33,10 +33,7 @@ class _EditProfileState extends State<EditProfile> {
   int? jumlahPenerima;
   final List<String> roleWithLocation = ['penanggungjawab_mbg', 'petugas_sppg'];
   final List<String> roleWithLembaga = ['penanggungjawab_mbg', 'petugas_sppg'];
-  final List<String> roleWithJumlahPenerima = [
-    'penanggungjawab_mbg',
-    'petugas_sppg',
-  ];
+  final List<String> roleWithJumlahPenerima = ['penanggungjawab_mbg'];
 
   @override
   void initState() {
@@ -62,7 +59,7 @@ class _EditProfileState extends State<EditProfile> {
         final data = await supabase
             .from('profiles')
             .select(
-              'username, alamat, avatar_url,longitude,latitude, user_roles(roles(nama_role))',
+              'username, alamat, avatar_url,longitude,latitude, lembaga, jumlah_penerima,user_roles(roles(nama_role))',
             )
             .eq('id', user.id)
             .single();
@@ -74,6 +71,8 @@ class _EditProfileState extends State<EditProfile> {
             _oldAvatarUrl = data['avatar_url'];
             _latitude = data['latitude'];
             _longitude = data['longitude'];
+            lembagaController.text = lembaga = data['lembaga'];
+            jumlahPenerimaController.text = data['jumlah_penerima'].toString();
             final List roleData = data['user_roles'] ?? [];
             if (roleData.isNotEmpty && roleData[0]['roles'] != null) {
               _currentUserRole = roleData[0]['roles']['nama_role']
@@ -331,7 +330,7 @@ class _EditProfileState extends State<EditProfile> {
                       const SizedBox(height: 30),
 
                       // FORM FIELD
-                      _buildField("Nama Lengkap", nameController),
+                      _buildField("Username", nameController),
                       const SizedBox(height: 16),
                       _buildField(
                         "Password",

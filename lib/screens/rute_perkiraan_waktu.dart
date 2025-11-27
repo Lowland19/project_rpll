@@ -75,7 +75,7 @@ class RutePerkiraanWaktuScreen extends StatelessWidget {
                         children: [
                           Icon(Icons.check_circle, color: Colors.grey),
                           SizedBox(height: 5),
-                          Text("Pesanan Dibuat"),
+                          Text("Menu Ditetapkan"),
                         ],
                       ),
                       Column(

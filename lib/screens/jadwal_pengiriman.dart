@@ -28,51 +28,61 @@ class _JadwalPengirimanScreenState extends State<JadwalPengirimanScreen> {
           padding: const EdgeInsets.all(20),
           child: Column(
             children: [
+
               const SizedBox(height: 10),
 
-              // Search Bar
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Row(
-                  children: [
-                    Icon(Icons.search, color: Colors.white70),
-                    SizedBox(width: 10),
-                    Expanded(
-                      child: TextField(
-                        style: TextStyle(color: Colors.white),
-                        decoration: InputDecoration(
-                          border: InputBorder.none,
-                          hintText: "Cari...",
-                          hintStyle: TextStyle(color: Colors.white70),
+              // 🔥 BACK BUTTON
+              Row(
+                children: [
+                  GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: Row(
+                      children: const [
+                        Icon(Icons.arrow_back_ios, color: Colors.white),
+                        SizedBox(width: 5),
+                        Text(
+                          "Back",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                          ),
                         ),
-                      ),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
 
               const SizedBox(height: 20),
 
-              // Dropdown filter
               Align(
                 alignment: Alignment.centerLeft,
                 child: DropdownButton<String>(
-                  dropdownColor: Colors.white,
                   value: selectedFilter,
+                  dropdownColor: const Color(0xFF5A0E0E), // background dropdown item (gelap)
+                  style: const TextStyle(
+                    color: Colors.white, // warna teks saat dropdown tertutup
+                    fontSize: 16,
+                  ),
+                  iconEnabledColor: Colors.white, // icon dropdown putih
                   items: ["Semua Sekolah", "SMA 3", "SMP 12", "TK", "SD", "PAUD"]
                       .map((item) => DropdownMenuItem(
                     value: item,
-                    child: Text(item),
-                  )).toList(),
+                    child: Text(
+                      item,
+                      style: const TextStyle(
+                        color: Colors.white, // teks item dropdown putih
+                      ),
+                    ),
+                  ))
+                      .toList(),
                   onChanged: (value) {
                     setState(() => selectedFilter = value!);
                   },
                 ),
               ),
+
+
 
               const SizedBox(height: 15),
 

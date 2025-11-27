@@ -2,6 +2,8 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:project_rpll/screens/map_picker_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class EditProfile extends StatefulWidget {
@@ -22,6 +24,8 @@ class _EditProfileState extends State<EditProfile> {
   File? _imageFile;
   String? _oldAvatarUrl;
   String _currentUserRole = '';
+  double? _latitude;
+  double? _longitude;
   final List<String> roleWithLocation = ['penanggungjawab_mbg', 'petugas_sppg'];
 
   @override
@@ -58,6 +62,8 @@ class _EditProfileState extends State<EditProfile> {
             emailController.text = user.email ?? '_';
             alamatController.text = data['alamat'];
             _oldAvatarUrl = data['avatar_url'];
+            _latitude = data['latitude'];
+            _longitude = data['longitude'];
             final List roleData = data['user_roles'] ?? [];
             if (roleData.isNotEmpty && roleData[0]['roles'] != null) {
               _currentUserRole = roleData[0]['roles']['nama_role']
@@ -79,6 +85,22 @@ class _EditProfileState extends State<EditProfile> {
           });
         }
       }
+    }
+  }
+
+  Future<void> _openMapPicker() async {
+    final LatLng? result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) =>
+            MapPickerScreen(initialLat: _latitude, initialLong: _longitude),
+      ),
+    );
+    if (result != null) {
+      setState(() {
+        _latitude = result.latitude;
+        _longitude = result.longitude;
+      });
     }
   }
 
@@ -134,7 +156,6 @@ class _EditProfileState extends State<EditProfile> {
     if (user != null) {
       try {
         final name = nameController.text;
-        final emailBaru = emailController.text;
         final password = passwordController.text;
         final alamat = roleWithLocation.contains(_currentUserRole)
             ? alamatController.text.trim()
@@ -167,6 +188,8 @@ class _EditProfileState extends State<EditProfile> {
               'username': name,
               'alamat': alamat,
               'avatar_url': newAvatarUrl,
+              'longitude': _longitude,
+              'latitude': _latitude,
             })
             .eq('id', user.id);
         if (mounted) {
@@ -308,30 +331,75 @@ class _EditProfileState extends State<EditProfile> {
 
                       const SizedBox(height: 30),
 
-                      // SAVE BUTTON
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: () {
-                            _isSaving ? null : _updateUserProfile();
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFFE53935),
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Titik Koordinat'),
+                          SizedBox(height: 6),
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.white54),
+                              borderRadius: BorderRadius.circular(6),
                             ),
-                          ),
-                          child: _isSaving
-                              ? null
-                              : const Text(
-                                  "SAVE CHANGES",
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    color: Colors.white,
+                            child: Row(
+                              children: [
+                                const Icon(
+                                  Icons.location_on,
+                                  color: Colors.red,
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    (_latitude != null && _longitude != null)
+                                        ? "${_latitude!.toStringAsFixed(5)}, ${_longitude!.toStringAsFixed(5)}"
+                                        : "Belum set lokasi",
+                                    style: const TextStyle(color: Colors.white),
                                   ),
                                 ),
-                        ),
+                                ElevatedButton(
+                                  onPressed: _openMapPicker, // Buka Peta
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.white,
+                                    foregroundColor: Colors.black,
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 10,
+                                    ),
+                                  ),
+                                  child: const Text("Pilih Peta"),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          // SAVE BUTTON
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: () {
+                                _isSaving ? null : _updateUserProfile();
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFFE53935),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 14,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              child: _isSaving
+                                  ? null
+                                  : const Text(
+                                      "SAVE CHANGES",
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),

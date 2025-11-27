@@ -32,7 +32,7 @@ class _AdminUserScreenState extends State<AdminUserScreen> {
 
       final data = await supabase
           .from('profiles')
-          .select('id, full_name, username, user_roles(roles(nama_role))');
+          .select('id, username, user_roles(roles(nama_role))');
 
       setState(() {
         usersList = List<Map<String, dynamic>>.from(data);
@@ -45,9 +45,6 @@ class _AdminUserScreenState extends State<AdminUserScreen> {
   }
 
   Future<void> changeRole(String userId, String newRole) async {
-    print("DEBUG: ID User = $userId");
-    print("DEBUG: Role Baru = $newRole");
-
     try {
       await Supabase.instance.client.rpc(
         'update_user_role',
@@ -112,13 +109,12 @@ class _AdminUserScreenState extends State<AdminUserScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          user['full_name'] ?? 'Tanpa Nama',
+                          user['username'] ?? 'Tanpa Nama',
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 16,
                           ),
                         ),
-                        Text("@${user['username'] ?? '_'}"),
                         SizedBox(height: 8),
                         DropdownButton<String>(
                           value: initialValue,

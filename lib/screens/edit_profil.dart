@@ -52,7 +52,7 @@ class _EditProfileState extends State<EditProfile> {
         final data = await supabase
             .from('profiles')
             .select(
-              'username, alamat, avatar_url, user_roles(roles(nama_role))',
+              'username, alamat, avatar_url,longitude,latitude, user_roles(roles(nama_role))',
             )
             .eq('id', user.id)
             .single();

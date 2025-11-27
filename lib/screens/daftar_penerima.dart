@@ -1,62 +1,61 @@
 import 'package:flutter/material.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-class DaftarPenerimaScreen extends StatelessWidget {
+class DaftarPenerimaScreen extends StatefulWidget {
   const DaftarPenerimaScreen({super.key});
 
-  // DATA PENERIMA
-  final List<Map<String, dynamic>> penerimaList = const [
-    {"nama": "SMAN 3 Cimahi", "jumlah": 1250, "jarak": "3.2 km"},
-    {"nama": "SDN Pasirkaliki Mandiri 2", "jumlah": 656, "jarak": "950 m"},
-    {"nama": "SMPN 12", "jumlah": 595, "jarak": "900 m"},
-    {"nama": "SDN Pasirkaliki Mandiri 1", "jumlah": 397, "jarak": "350 m"},
-    {"nama": "SLB B Prima Bhakti", "jumlah": 89, "jarak": "1.2 km"},
-    {"nama": "RA Nurul Huda", "jumlah": 55, "jarak": "3 km"},
-    {"nama": "TK Pamekar Budi", "jumlah": 52, "jarak": "1.2 km"},
-    {"nama": "PAUD Melati 10", "jumlah": 47, "jarak": "8.8 km"},
-    {"nama": "PAUD Darul Falah", "jumlah": 46, "jarak": "800 m"},
-    {"nama": "Kober Qurrotu'ain Al Istiqomah", "jumlah": 45, "jarak": "5 km"},
-    {"nama": "PAUD Mawar Putih", "jumlah": 30, "jarak": "1.6 km"},
-    {"nama": "PAUD Kenanga 12", "jumlah": 27, "jarak": "7.7 km"},
-    {"nama": "RA Darul Hufadz", "jumlah": 27, "jarak": "1 km"},
-    {"nama": "RA Darul Ikhlas", "jumlah": 25, "jarak": "1.3 km"},
-    {"nama": "TK Daarul Hidayah Al-Qurani", "jumlah": 21, "jarak": "1.1 km"},
-    {"nama": "TK Harapan Mulya", "jumlah": 20, "jarak": "500 m"},
-    {"nama": "Kober Nurul Huda Al Khudlory", "jumlah": 20, "jarak": "400 m"},
-  ];
+  @override
+  State<DaftarPenerimaScreen> createState() => _DaftarPenerimaScreenState();
+}
 
-  // KONVERSI JARAK (meter/km → angka)
-  double konversiJarak(String jarakStr) {
-    if (jarakStr.contains("km")) {
-      return double.tryParse(jarakStr.replaceAll(" km", "")) ?? 9999;
-    } else if (jarakStr.contains("m")) {
-      return (double.tryParse(jarakStr.replaceAll(" m", "")) ?? 9999) / 1000;
+class _DaftarPenerimaScreenState extends State<DaftarPenerimaScreen> {
+  List<Map<String, dynamic>> _dafterPenerima = [];
+  bool _isLoading = true;
+  String? _errorMsg;
+
+  Future<void> _fetchDataPenerima() async {
+    final supabase = Supabase.instance.client;
+    try {
+      final data = await supabase
+          .from('profiles')
+          .select(
+            ' lembaga, jumlah_penerima, alamat, avatar_url, user_roles!inner(roles!inner(nama_role))',
+          )
+          .eq('user_roles.roles.nama_role', 'penanggungjawab_mbg')
+          .order('lembaga', ascending: true);
+      if (mounted) {
+        setState(() {
+          _dafterPenerima = List<Map<String, dynamic>>.from(data);
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error $e');
+      if (mounted) {
+        setState(() {
+          _errorMsg = 'Gagal muat data: $e';
+          _isLoading = false;
+        });
+      }
     }
-    return 9999;
   }
 
   @override
+  void initState() {
+    super.initState();
+    _fetchDataPenerima();
+  }
+
+  @override
+  @override
   Widget build(BuildContext context) {
-    // SORT JUMLAH & JARAK
-    List<Map<String, dynamic>> sortedList = [...penerimaList];
-
-    sortedList.sort((a, b) {
-      // 1. Urutkan jumlah tertinggi
-      if (b["jumlah"] != a["jumlah"]) {
-        return b["jumlah"].compareTo(a["jumlah"]);
-      }
-
-      // 2. Jika jumlah sama → jarak terdekat
-      double ja = konversiJarak(a["jarak"]);
-      double jb = konversiJarak(b["jarak"]);
-      return ja.compareTo(jb);
-    });
-
     return Scaffold(
       backgroundColor: const Color(0xFF3B0E0E),
       body: SafeArea(
         child: Stack(
           children: [
-            // BULATAN HIASAN
+            // Background Lingkaran
             Positioned(
               bottom: -40,
               left: -50,
@@ -74,6 +73,7 @@ class DaftarPenerimaScreen extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
               child: Column(
                 children: [
+                  // Header Back
                   Row(
                     children: [
                       GestureDetector(
@@ -85,9 +85,7 @@ class DaftarPenerimaScreen extends StatelessWidget {
                       ),
                     ],
                   ),
-
                   const SizedBox(height: 10),
-
                   const Text(
                     "Daftar Penerima",
                     style: TextStyle(
@@ -96,20 +94,44 @@ class DaftarPenerimaScreen extends StatelessWidget {
                       fontSize: 22,
                     ),
                   ),
-
                   const SizedBox(height: 25),
 
+                  // --- PERBAIKAN LOGIKA TAMPILAN ---
                   Expanded(
-                    child: ListView.builder(
-                      itemCount: sortedList.length,
-                      itemBuilder: (context, index) {
-                        return penerimaTile(
-                          nama: sortedList[index]["nama"],
-                          jumlah: sortedList[index]["jumlah"],
-                          jarak: sortedList[index]["jarak"],
-                        );
-                      },
-                    ),
+                    child: _isLoading
+                        ? const Center(
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                            ),
+                          )
+                        : _errorMsg != null
+                        ? Center(
+                            child: Text(
+                              _errorMsg!,
+                              style: const TextStyle(color: Colors.white),
+                            ),
+                          )
+                        : _dafterPenerima.isEmpty
+                        ? const Center(
+                            child: Text(
+                              "Belum ada data penerima.",
+                              style: TextStyle(color: Colors.white70),
+                            ),
+                          )
+                        : ListView.builder(
+                            itemCount: _dafterPenerima.length,
+                            itemBuilder: (context, index) {
+                              final item = _dafterPenerima[index];
+                              return penerimaTile(
+                                // Gunakan ?? agar tidak error jika data null
+                                nama:
+                                    item["lembaga"] ??
+                                    item["full_name"] ??
+                                    "Nama Tidak Ada",
+                                jumlah: item["jumlah_penerima"] ?? 0,
+                              );
+                            },
+                          ),
                   ),
                 ],
               ),
@@ -120,12 +142,7 @@ class DaftarPenerimaScreen extends StatelessWidget {
     );
   }
 
-  Widget penerimaTile({
-    required String nama,
-    required int jumlah,
-    required String jarak,
-    // required String img,
-  }) {
+  Widget penerimaTile({required String nama, required int jumlah}) {
     return Container(
       margin: const EdgeInsets.only(bottom: 15),
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
@@ -149,22 +166,26 @@ class DaftarPenerimaScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 4),
-                Text(
-                  "Jumlah: $jumlah",
-                  style: const TextStyle(color: Colors.white70, fontSize: 14),
+
+                // Tampilkan Jumlah
+                Row(
+                  children: [
+                    const Icon(Icons.people, color: Colors.white70, size: 16),
+                    const SizedBox(width: 5),
+                    Text(
+                      "Jumlah: $jumlah",
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
                 ),
-                Text(
-                  "Jarak: $jarak",
-                  style: const TextStyle(color: Colors.white70, fontSize: 14),
-                ),
+
+                // Jarak dihapus sesuai permintaan sebelumnya
               ],
             ),
           ),
-
-          // ClipRRect(
-          //   borderRadius: BorderRadius.circular(8),
-          //   child: Image.asset(img, width: 55, height: 55, fit: BoxFit.cover),
-          // ),
         ],
       ),
     );

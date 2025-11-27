@@ -19,7 +19,7 @@ class HomeScreenWidget extends StatefulWidget {
 
 class _HomeScreenWidgetState extends State<HomeScreenWidget> {
   String displayName = '';
-  String userRole = '';
+  List<String> userRole = [];
 
   Future<void> getProfileData() async {
     final supabase = Supabase.instance.client;
@@ -38,12 +38,20 @@ class _HomeScreenWidgetState extends State<HomeScreenWidget> {
             displayName = data['username'] ?? 'User';
 
             final List rolesData = data['user_roles'] ?? [];
-            if (rolesData.isNotEmpty && rolesData[0]['roles'] != null) {
-              userRole = rolesData[0]['roles']['nama_role'];
+            if (rolesData.isNotEmpty) {
+              for (var item in rolesData) {
+                if (item['roles'] != null) {
+                  String roleName = item['roles']['nama_role']
+                      .toString()
+                      .toLowerCase();
+                  userRole.add(roleName);
+                }
+              }
             } else {
-              userRole = 'pendatang';
+              userRole.add('pendatang');
             }
           });
+          print("✅ Role User: $userRole");
         }
       } catch (e) {
         print('Gagal ambil profil : $e');
@@ -189,13 +197,19 @@ class _HomeScreenWidgetState extends State<HomeScreenWidget> {
                     crossAxisSpacing: 16,
                     mainAxisSpacing: 16,
                     children: menuItems
-                        .where((menu) =>
-                        (menu['allowed_roles'] as List).contains(userRole))
-                        .map((menu) => _menuCard(
-                      icon: menu['icon'],
-                      title: menu['title'],
-                      onTap: menu['action'],
-                    ))
+                        .where((menu) {
+                          List<String> allowed = menu['allowed_roles'];
+                          return userRole.any(
+                            (myRole) => allowed.contains(myRole),
+                          );
+                        })
+                        .map(
+                          (menu) => _menuCard(
+                            icon: menu['icon'],
+                            title: menu['title'],
+                            onTap: menu['action'],
+                          ),
+                        )
                         .toList(),
                   ),
                 ),
@@ -219,7 +233,11 @@ class _HomeScreenWidgetState extends State<HomeScreenWidget> {
                 MaterialPageRoute(builder: (_) => const NotifikasiScreen()),
               );
             },
-            child: const Icon(Icons.notifications, color: Colors.white, size: 28),
+            child: const Icon(
+              Icons.notifications,
+              color: Colors.white,
+              size: 28,
+            ),
           ),
         ),
       ),
@@ -243,9 +261,11 @@ class _HomeScreenWidgetState extends State<HomeScreenWidget> {
           children: [
             Icon(icon, size: 40, color: Colors.white),
             const SizedBox(height: 16),
-            Text(title,
-                textAlign: TextAlign.center,
-                style: const TextStyle(color: Colors.white)),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Colors.white),
+            ),
           ],
         ),
       ),

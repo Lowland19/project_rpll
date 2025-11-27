@@ -81,7 +81,7 @@ class _RutePerkiraanWaktuScreenState extends State<RutePerkiraanWaktuScreen> {
                         children: [
                           Icon(Icons.check_circle, color: Colors.grey),
                           SizedBox(height: 5),
-                          Text("Pesanan Dibuat"),
+                          Text("Menu Ditetapkan"),
                         ],
                       ),
                       Column(

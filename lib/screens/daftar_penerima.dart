@@ -3,14 +3,60 @@ import 'package:flutter/material.dart';
 class DaftarPenerimaScreen extends StatelessWidget {
   const DaftarPenerimaScreen({super.key});
 
+  // DATA PENERIMA
+  final List<Map<String, dynamic>> penerimaList = const [
+    {"nama": "SMAN 3 Cimahi", "jumlah": 1250, "jarak": "3.2 km"},
+    {"nama": "SDN Pasirkaliki Mandiri 2", "jumlah": 656, "jarak": "950 m"},
+    {"nama": "SMPN 12", "jumlah": 595, "jarak": "900 m"},
+    {"nama": "SDN Pasirkaliki Mandiri 1", "jumlah": 397, "jarak": "350 m"},
+    {"nama": "SLB B Prima Bhakti", "jumlah": 89, "jarak": "1.2 km"},
+    {"nama": "RA Nurul Huda", "jumlah": 55, "jarak": "3 km"},
+    {"nama": "TK Pamekar Budi", "jumlah": 52, "jarak": "1.2 km"},
+    {"nama": "PAUD Melati 10", "jumlah": 47, "jarak": "8.8 km"},
+    {"nama": "PAUD Darul Falah", "jumlah": 46, "jarak": "800 m"},
+    {"nama": "Kober Qurrotu’ain Al Istiqomah", "jumlah": 45, "jarak": "5 km"},
+    {"nama": "PAUD Mawar Putih", "jumlah": 30, "jarak": "1.6 km"},
+    {"nama": "PAUD Kenanga 12", "jumlah": 27, "jarak": "7.7 km"},
+    {"nama": "RA Darul Hufadz", "jumlah": 27, "jarak": "1 km"},
+    {"nama": "RA Darul Ikhlas", "jumlah": 25, "jarak": "1.3 km"},
+    {"nama": "TK Daarul Hidayah Al-Qurani", "jumlah": 21, "jarak": "1.1 km"},
+    {"nama": "TK Harapan Mulya", "jumlah": 20, "jarak": "500 m"},
+    {"nama": "Kober Nurul Huda Al Khudlory", "jumlah": 20, "jarak": "400 m"},
+  ];
+
+  // KONVERSI JARAK (meter/km → angka)
+  double konversiJarak(String jarakStr) {
+    if (jarakStr.contains("km")) {
+      return double.tryParse(jarakStr.replaceAll(" km", "")) ?? 9999;
+    } else if (jarakStr.contains("m")) {
+      return (double.tryParse(jarakStr.replaceAll(" m", "")) ?? 9999) / 1000;
+    }
+    return 9999;
+  }
+
   @override
   Widget build(BuildContext context) {
+    // SORT JUMLAH & JARAK
+    List<Map<String, dynamic>> sortedList = [...penerimaList];
+
+    sortedList.sort((a, b) {
+      // 1. Urutkan jumlah tertinggi
+      if (b["jumlah"] != a["jumlah"]) {
+        return b["jumlah"].compareTo(a["jumlah"]);
+      }
+
+      // 2. Jika jumlah sama → jarak terdekat
+      double ja = konversiJarak(a["jarak"]);
+      double jb = konversiJarak(b["jarak"]);
+      return ja.compareTo(jb);
+    });
+
     return Scaffold(
       backgroundColor: const Color(0xFF3B0E0E),
       body: SafeArea(
         child: Stack(
           children: [
-            // BULATAN DEKORASI
+            // BULATAN HIASAN
             Positioned(
               bottom: -40,
               left: -50,
@@ -32,8 +78,8 @@ class DaftarPenerimaScreen extends StatelessWidget {
                     children: [
                       GestureDetector(
                         onTap: () => Navigator.pop(context),
-                        child: const Icon(Icons.arrow_back_ios,
-                            color: Colors.white),
+                        child:
+                        const Icon(Icons.arrow_back_ios, color: Colors.white),
                       ),
                     ],
                   ),
@@ -52,19 +98,16 @@ class DaftarPenerimaScreen extends StatelessWidget {
                   const SizedBox(height: 25),
 
                   Expanded(
-                    child: ListView(
-                      children: [
-                        penerimaTile(
-                            nama: "SMA 3", img: "assets/img/sma3.png"),
-                        penerimaTile(
-                            nama: "SMP 12", img: "assets/img/smp12.png"),
-                        penerimaTile(
-                            nama: "TK", img: "assets/img/sma3.png"),
-                        penerimaTile(
-                            nama: "SD", img: "assets/img/smp12.png"),
-                        penerimaTile(
-                            nama: "PAUD", img: "assets/img/sma3.png"),
-                      ],
+                    child: ListView.builder(
+                      itemCount: sortedList.length,
+                      itemBuilder: (context, index) {
+                        return penerimaTile(
+                          nama: sortedList[index]["nama"],
+                          jumlah: sortedList[index]["jumlah"],
+                          jarak: sortedList[index]["jarak"],
+                          img: "assets/img/default.png",
+                        );
+                      },
                     ),
                   ),
                 ],
@@ -76,7 +119,12 @@ class DaftarPenerimaScreen extends StatelessWidget {
     );
   }
 
-  Widget penerimaTile({required String nama, required String img}) {
+  Widget penerimaTile({
+    required String nama,
+    required int jumlah,
+    required String jarak,
+    required String img,
+  }) {
     return Container(
       margin: const EdgeInsets.only(bottom: 15),
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
@@ -88,12 +136,33 @@ class DaftarPenerimaScreen extends StatelessWidget {
       child: Row(
         children: [
           Expanded(
-            child: Text(
-              nama,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 18,
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  nama,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  "Jumlah: $jumlah",
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 14,
+                  ),
+                ),
+                Text(
+                  "Jarak: $jarak",
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 14,
+                  ),
+                ),
+              ],
             ),
           ),
 

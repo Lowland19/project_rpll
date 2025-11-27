@@ -87,7 +87,7 @@ class _HomeScreenWidgetState extends State<HomeScreenWidget> {
         ),
       },
       {
-        'title': "Laporan Pengembalian",
+        'title': "Pengembalian",
         'icon': Icons.assignment_return,
         'allowed_roles': ['sopir', 'admin'],
         'action': () => Navigator.push(

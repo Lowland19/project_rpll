@@ -2,6 +2,8 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:project_rpll/screens/map_picker_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class EditProfile extends StatefulWidget {
@@ -21,6 +23,10 @@ class _EditProfileState extends State<EditProfile> {
   bool _isSaving = false;
   File? _imageFile;
   String? _oldAvatarUrl;
+  String _currentUserRole = '';
+  double? _latitude;
+  double? _longitude;
+  final List<String> roleWithLocation = ['penanggungjawab_mbg', 'petugas_sppg'];
 
   @override
   void initState() {
@@ -45,7 +51,9 @@ class _EditProfileState extends State<EditProfile> {
       try {
         final data = await supabase
             .from('profiles')
-            .select('username, alamat, avatar_url')
+            .select(
+              'username, alamat, avatar_url,longitude,latitude, user_roles(roles(nama_role))',
+            )
             .eq('id', user.id)
             .single();
         if (mounted) {
@@ -54,6 +62,16 @@ class _EditProfileState extends State<EditProfile> {
             emailController.text = user.email ?? '_';
             alamatController.text = data['alamat'];
             _oldAvatarUrl = data['avatar_url'];
+            _latitude = data['latitude'];
+            _longitude = data['longitude'];
+            final List roleData = data['user_roles'] ?? [];
+            if (roleData.isNotEmpty && roleData[0]['roles'] != null) {
+              _currentUserRole = roleData[0]['roles']['nama_role']
+                  .toString()
+                  .toLowerCase();
+            } else {
+              _currentUserRole = 'pendatang';
+            }
             _isLoading = false;
           });
         }
@@ -67,6 +85,22 @@ class _EditProfileState extends State<EditProfile> {
           });
         }
       }
+    }
+  }
+
+  Future<void> _openMapPicker() async {
+    final LatLng? result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) =>
+            MapPickerScreen(initialLat: _latitude, initialLong: _longitude),
+      ),
+    );
+    if (result != null) {
+      setState(() {
+        _latitude = result.latitude;
+        _longitude = result.longitude;
+      });
     }
   }
 
@@ -102,13 +136,10 @@ class _EditProfileState extends State<EditProfile> {
 
   ImageProvider _getAvatarImage() {
     if (_imageFile != null) {
-      return FileImage(_imageFile!); // 1. Jika user baru pilih foto dari galeri
+      return FileImage(_imageFile!);
     } else if (_oldAvatarUrl != null && _oldAvatarUrl!.isNotEmpty) {
-      return NetworkImage(
-        _oldAvatarUrl!,
-      ); // 2. Jika user punya foto di database
+      return NetworkImage(_oldAvatarUrl!);
     } else {
-      // 3. Foto default jika belum punya apa-apa
       return const NetworkImage(
         'https://thumbs.dreamstime.com/b/creative-illustration-default-avatar-profile-placeholder-isolated-background-art-design-grey-photo-blank-template-mockup-144855718.jpg',
       );
@@ -125,9 +156,10 @@ class _EditProfileState extends State<EditProfile> {
     if (user != null) {
       try {
         final name = nameController.text;
-        final emailBaru = emailController.text;
         final password = passwordController.text;
-        final alamat = alamatController.text;
+        final alamat = roleWithLocation.contains(_currentUserRole)
+            ? alamatController.text.trim()
+            : null;
 
         UserAttributes attributes = UserAttributes();
         bool needUpdateAuth = false;
@@ -156,6 +188,8 @@ class _EditProfileState extends State<EditProfile> {
               'username': name,
               'alamat': alamat,
               'avatar_url': newAvatarUrl,
+              'longitude': _longitude,
+              'latitude': _latitude,
             })
             .eq('id', user.id);
         if (mounted) {
@@ -183,6 +217,7 @@ class _EditProfileState extends State<EditProfile> {
 
   @override
   Widget build(BuildContext context) {
+    bool showLocationField = roleWithLocation.contains(_currentUserRole);
     return Scaffold(
       backgroundColor: const Color(0xFF3B0E0E),
       body: _isLoading
@@ -289,34 +324,82 @@ class _EditProfileState extends State<EditProfile> {
                       const SizedBox(height: 16),
                       _buildField("Email", emailController),
                       const SizedBox(height: 16),
-                      _buildField("Alamat", alamatController),
+                      if (showLocationField) ...[
+                        _buildField("Alamat / Lokasi", alamatController),
+                        const SizedBox(height: 16),
+                      ],
 
                       const SizedBox(height: 30),
 
-                      // SAVE BUTTON
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: () {
-                            _isSaving ? null : _updateUserProfile();
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFFE53935),
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Titik Koordinat'),
+                          SizedBox(height: 6),
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.white54),
+                              borderRadius: BorderRadius.circular(6),
                             ),
-                          ),
-                          child: _isSaving
-                              ? null
-                              : const Text(
-                                  "SAVE CHANGES",
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    color: Colors.white,
+                            child: Row(
+                              children: [
+                                const Icon(
+                                  Icons.location_on,
+                                  color: Colors.red,
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    (_latitude != null && _longitude != null)
+                                        ? "${_latitude!.toStringAsFixed(5)}, ${_longitude!.toStringAsFixed(5)}"
+                                        : "Belum set lokasi",
+                                    style: const TextStyle(color: Colors.white),
                                   ),
                                 ),
-                        ),
+                                ElevatedButton(
+                                  onPressed: _openMapPicker, // Buka Peta
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.white,
+                                    foregroundColor: Colors.black,
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 10,
+                                    ),
+                                  ),
+                                  child: const Text("Pilih Peta"),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          // SAVE BUTTON
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: () {
+                                _isSaving ? null : _updateUserProfile();
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFFE53935),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 14,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              child: _isSaving
+                                  ? null
+                                  : const Text(
+                                      "SAVE CHANGES",
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),

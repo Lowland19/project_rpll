@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-class RutePerkiraanWaktuScreen extends StatelessWidget {
+class RutePerkiraanWaktuScreen extends StatefulWidget {
   final String sekolah;
   final String jam;
 
@@ -10,6 +10,12 @@ class RutePerkiraanWaktuScreen extends StatelessWidget {
     required this.jam,
   });
 
+  @override
+  State<RutePerkiraanWaktuScreen> createState() =>
+      _RutePerkiraanWaktuScreenState();
+}
+
+class _RutePerkiraanWaktuScreenState extends State<RutePerkiraanWaktuScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -62,7 +68,7 @@ class RutePerkiraanWaktuScreen extends StatelessWidget {
                   ),
 
                   const SizedBox(height: 6),
-                  Text("Alamat : $sekolah"),
+                  Text("Alamat : ${widget.sekolah}"),
                   const SizedBox(height: 4),
                   Text("Estimasi Tiba : 12 menit"),
 
@@ -87,7 +93,10 @@ class RutePerkiraanWaktuScreen extends StatelessWidget {
                       ),
                       Column(
                         children: [
-                          Icon(Icons.radio_button_unchecked, color: Colors.grey),
+                          Icon(
+                            Icons.radio_button_unchecked,
+                            color: Colors.grey,
+                          ),
                           SizedBox(height: 5),
                           Text("Sampai"),
                         ],
@@ -111,7 +120,7 @@ class RutePerkiraanWaktuScreen extends StatelessWidget {
 
                   const SizedBox(height: 10),
 
-                  Text("$jam MBG sedang dikirim"),
+                  Text("${widget.jam} MBG sedang dikirim"),
                   Text("09.35 Dalam pengiriman"),
                   Text("09.42 MBG telah sampai"),
 
@@ -129,7 +138,7 @@ class RutePerkiraanWaktuScreen extends StatelessWidget {
                       onPressed: () {},
                       child: const Text("Hubungi Sopir"),
                     ),
-                  )
+                  ),
                 ],
               ),
             ),

@@ -1,4 +1,9 @@
+import 'dart:io';
+import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:mime/mime.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class EditMenuScreen extends StatefulWidget {
@@ -13,48 +18,106 @@ class EditMenuScreen extends StatefulWidget {
 class _EditMenuScreenState extends State<EditMenuScreen> {
   late TextEditingController namaController;
   late TextEditingController penerimaController;
+  late String? jenisMakanan;
+  late String? hariTersedia;
 
-  String? jenisMakanan;
-  String? hariTersedia;
+  File? selectedImage;
+  Uint8List? webImage;
+  String? fotoUrl;
+
+  final List<Map<String, dynamic>> penerimaList = [
+    {"nama": "PAUD Darul Falah"},
+    {"nama": "Kober Qurrotu'ain Al Istiqomah"},
+    {"nama": "PAUD KENANGA 12"},
+    {"nama": "PAUD Melati 10"},
+    {"nama": "PAUD Mawar Putih"},
+    {"nama": "RA DARUL IKHLAS"},
+    {"nama": "RA Darul Hufadz"},
+    {"nama": "RA Nurul Huda"},
+    {"nama": "Kober Nurul Huda Al Khudlory"},
+    {"nama": "TK DAAIMUL HIDAYAH AL-QURANI"},
+    {"nama": "TK HARAPAN MULYA"},
+    {"nama": "TK PAMEKAR BUDI"},
+    {"nama": "SDN Pasirkaliki Mandiri 1"},
+    {"nama": "SDN Pasirkaliki Mandiri 2"},
+    {"nama": "SMPN 12"},
+    {"nama": "SMAN 3"},
+    {"nama": "SLB B PRIMA BHAKTI"},
+  ];
 
   @override
   void initState() {
     super.initState();
     namaController = TextEditingController(text: widget.menu['nama_makanan']);
-    penerimaController =
-        TextEditingController(text: widget.menu['penerima']);
-
-    List<String> jenisList = [
-      'Sumber karbohidrat',
-      'Protein hewani',
-      'Protein nabati',
-      'Sayur',
-      'Buah',
-      'Sumber lemak',
-      'Susu',
-    ];
-
-    List<String> hariList = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat'];
-
-    jenisMakanan =
-    jenisList.contains(widget.menu['jenis_makanan']) ? widget.menu['jenis_makanan'] : null;
-    hariTersedia =
-    hariList.contains(widget.menu['hari_tersedia']) ? widget.menu['hari_tersedia'] : null;
+    penerimaController = TextEditingController(text: widget.menu['penerima']);
+    jenisMakanan = widget.menu['jenis_makanan'];
+    hariTersedia = widget.menu['hari_tersedia'];
+    fotoUrl = widget.menu['foto_url'];
   }
+
+  Future<void> pickImage() async {
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(source: ImageSource.gallery);
+
+    if (picked != null) {
+      if (kIsWeb) {
+        webImage = await picked.readAsBytes();
+      } else {
+        selectedImage = File(picked.path);
+      }
+      setState(() {});
+    }
+  }
+
+  // ================= FIXED UPLOAD =================
+  Future<String?> uploadImage() async {
+    if (selectedImage == null && webImage == null) return fotoUrl;
+
+    final fileName = "menu_${DateTime.now().millisecondsSinceEpoch}.jpg";
+    final storage = Supabase.instance.client.storage.from("menu_foto");
+
+    try {
+      if (kIsWeb) {
+        await storage.uploadBinary(
+          fileName,
+          webImage!,
+          fileOptions: const FileOptions(contentType: "image/jpeg"),
+        );
+      } else {
+        final mimeType = lookupMimeType(selectedImage!.path);
+        final bytes = await selectedImage!.readAsBytes();
+
+        await storage.uploadBinary(
+          fileName,
+          bytes,
+          fileOptions: FileOptions(contentType: mimeType),
+        );
+      }
+
+      return storage.getPublicUrl(fileName);
+    } catch (e) {
+      print("Upload Error: $e");
+      return fotoUrl;
+    }
+  }
+  // ===============================================
 
   Future<void> updateMenu() async {
     try {
+      final imageUrl = await uploadImage();
+
       await Supabase.instance.client.from('daftar_menu').update({
         'nama_makanan': namaController.text,
-        'jenis_makanan': jenisMakanan ?? widget.menu['jenis_makanan'],
         'penerima': penerimaController.text,
-        'hari_tersedia': hariTersedia ?? widget.menu['hari_tersedia'],
+        'jenis_makanan': jenisMakanan,
+        'hari_tersedia': hariTersedia,
+        'foto_url': imageUrl,
       }).eq('id', widget.menu['id']);
 
-      Navigator.pop(context, true); // trigger refresh
+      Navigator.pop(context, true);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Gagal update menu: $e")),
+        SnackBar(content: Text("Gagal Update: $e")),
       );
     }
   }
@@ -68,139 +131,113 @@ class _EditMenuScreenState extends State<EditMenuScreen> {
         title: const Text("Edit Menu", style: TextStyle(color: Colors.white)),
         iconTheme: const IconThemeData(color: Colors.white),
       ),
-      body: Padding(
+      body: ListView(
         padding: const EdgeInsets.all(16),
-        child: ListView(
-          children: [
-            TextField(
-              controller: namaController,
-              style: const TextStyle(color: Colors.white),
-              decoration: InputDecoration(
-                labelText: "Nama",
-                labelStyle: const TextStyle(color: Colors.white),
-                filled: true,
-                fillColor: const Color(0xFF5A0E0E),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
+        children: [
+          Center(
+            child: GestureDetector(
+              onTap: pickImage,
+              child: CircleAvatar(
+                radius: 60,
+                backgroundImage: webImage != null
+                    ? MemoryImage(webImage!)
+                    : selectedImage != null
+                    ? FileImage(selectedImage!)
+                    : (fotoUrl != null ? NetworkImage(fotoUrl!) : null)
+                as ImageProvider?,
+                child: (selectedImage == null && webImage == null && fotoUrl == null)
+                    ? const Icon(Icons.camera_alt, size: 32, color: Colors.white)
+                    : null,
               ),
             ),
-            const SizedBox(height: 16),
-            DropdownButtonFormField<String>(
-              value: jenisMakanan,
-              dropdownColor: const Color(0xFF5A0E0E),
-              style: const TextStyle(color: Colors.white),
-              decoration: InputDecoration(
-                labelText: "Jenis Makanan",
-                labelStyle: const TextStyle(color: Colors.white),
-                filled: true,
-                fillColor: const Color(0xFF5A0E0E),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              onChanged: (value) => setState(() => jenisMakanan = value),
-              items: const [
-                DropdownMenuItem(
-                    value: 'Sumber karbohidrat',
-                    child: Text('Sumber karbohidrat',
-                        style: TextStyle(color: Colors.white))),
-                DropdownMenuItem(
-                    value: 'Protein hewani',
-                    child: Text('Protein hewani',
-                        style: TextStyle(color: Colors.white))),
-                DropdownMenuItem(
-                    value: 'Protein nabati',
-                    child: Text('Protein nabati',
-                        style: TextStyle(color: Colors.white))),
-                DropdownMenuItem(
-                    value: 'Sayur',
-                    child:
-                    Text('Sayur', style: TextStyle(color: Colors.white))),
-                DropdownMenuItem(
-                    value: 'Buah',
-                    child:
-                    Text('Buah', style: TextStyle(color: Colors.white))),
-                DropdownMenuItem(
-                    value: 'Sumber lemak',
-                    child: Text('Sumber lemak',
-                        style: TextStyle(color: Colors.white))),
-                DropdownMenuItem(
-                    value: 'Susu',
-                    child:
-                    Text('Susu', style: TextStyle(color: Colors.white))),
-              ],
-            ),
-            const SizedBox(height: 16),
-            DropdownButtonFormField<String>(
-              value: hariTersedia,
-              dropdownColor: const Color(0xFF5A0E0E),
-              style: const TextStyle(color: Colors.white),
-              decoration: InputDecoration(
-                labelText: "Hari Tersedia",
-                labelStyle: const TextStyle(color: Colors.white),
-                filled: true,
-                fillColor: const Color(0xFF5A0E0E),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              onChanged: (value) => setState(() => hariTersedia = value),
-              items: const [
-                DropdownMenuItem(
-                    value: 'Senin',
-                    child:
-                    Text('Senin', style: TextStyle(color: Colors.white))),
-                DropdownMenuItem(
-                    value: 'Selasa',
-                    child:
-                    Text('Selasa', style: TextStyle(color: Colors.white))),
-                DropdownMenuItem(
-                    value: 'Rabu',
-                    child:
-                    Text('Rabu', style: TextStyle(color: Colors.white))),
-                DropdownMenuItem(
-                    value: 'Kamis',
-                    child:
-                    Text('Kamis', style: TextStyle(color: Colors.white))),
-                DropdownMenuItem(
-                    value: 'Jumat',
-                    child:
-                    Text('Jumat', style: TextStyle(color: Colors.white))),
-              ],
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: penerimaController,
-              style: const TextStyle(color: Colors.white),
-              decoration: InputDecoration(
-                labelText: "Penerima",
-                labelStyle: const TextStyle(color: Colors.white),
-                filled: true,
-                fillColor: const Color(0xFF5A0E0E),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                ),
-                onPressed: updateMenu,
-                child: const Text(
-                  "Simpan Perubahan",
-                  style: TextStyle(color: Colors.white),
-                ),
-              ),
-            ),
-          ],
-        ),
+          ),
+
+          const SizedBox(height: 16),
+          TextField(
+            controller: namaController,
+            style: const TextStyle(color: Colors.white),
+            decoration: inputStyle("Nama"),
+          ),
+
+          const SizedBox(height: 16),
+          DropdownButtonFormField(
+            value: jenisMakanan,
+            dropdownColor: const Color(0xFF5A0E0E),
+            style: const TextStyle(color: Colors.white),
+            decoration: inputStyle("Jenis Makanan"),
+            onChanged: (v) => setState(() => jenisMakanan = v),
+            items: [
+              'Sumber karbohidrat',
+              'Protein hewani',
+              'Protein nabati',
+              'Sayur',
+              'Buah',
+              'Sumber lemak',
+              'Susu'
+            ]
+                .map((e) => DropdownMenuItem(
+              value: e,
+              child: Text(e, style: const TextStyle(color: Colors.white)),
+            ))
+                .toList(),
+          ),
+
+          const SizedBox(height: 16),
+          DropdownButtonFormField(
+            value: hariTersedia,
+            dropdownColor: const Color(0xFF5A0E0E),
+            style: const TextStyle(color: Colors.white),
+            decoration: inputStyle("Hari Tersedia"),
+            onChanged: (v) => setState(() => hariTersedia = v),
+            items: ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat']
+                .map((e) => DropdownMenuItem(
+              value: e,
+              child: Text(e, style: const TextStyle(color: Colors.white)),
+            ))
+                .toList(),
+          ),
+
+          const SizedBox(height: 16),
+          DropdownButtonFormField(
+            value: penerimaController.text.isNotEmpty
+                ? penerimaController.text
+                : null,
+            dropdownColor: const Color(0xFF5A0E0E),
+            style: const TextStyle(color: Colors.white),
+            decoration: inputStyle("Penerima"),
+            onChanged: (value) {
+              setState(() {
+                penerimaController.text = value.toString();
+              });
+            },
+            items: penerimaList
+                .map((item) => DropdownMenuItem(
+              value: item['nama'],
+              child: Text(item['nama'],
+                  style: const TextStyle(color: Colors.white)),
+            ))
+                .toList(),
+          ),
+
+          const SizedBox(height: 24),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                padding: const EdgeInsets.all(14)),
+            onPressed: updateMenu,
+            child: const Text("Simpan Perubahan",
+                style: TextStyle(color: Colors.white)),
+          ),
+        ],
       ),
     );
   }
+
+  InputDecoration inputStyle(String label) => InputDecoration(
+    labelText: label,
+    labelStyle: const TextStyle(color: Colors.white),
+    filled: true,
+    fillColor: const Color(0xFF5A0E0E),
+    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+  );
 }

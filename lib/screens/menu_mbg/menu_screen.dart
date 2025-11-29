@@ -11,7 +11,7 @@ class MenuScreen extends StatefulWidget {
 }
 
 class _MenuScreenState extends State<MenuScreen> {
-  List<dynamic> daftarMenu = [];
+  List<Map<String, dynamic>> daftarMenu = [];
   bool isLoading = true;
 
   @override
@@ -21,19 +21,28 @@ class _MenuScreenState extends State<MenuScreen> {
   }
 
   Future<void> fetchMenu() async {
-    setState(() => isLoading = true);
-    final response = await Supabase.instance.client
-        .from('daftar_menu')
-        .select()
-        .order('id', ascending: true);
+    try {
+      setState(() => isLoading = true);
 
-    setState(() {
-      daftarMenu = response;
-      isLoading = false;
-    });
+      final response = await Supabase.instance.client
+          .from('daftar_menu')
+          .select('*')
+          .order('id', ascending: true);
+
+      setState(() {
+        daftarMenu = response
+            .map<Map<String, dynamic>>(
+                (item) => Map<String, dynamic>.from(item))
+            .toList();
+
+        isLoading = false;
+      });
+    } catch (e) {
+      debugPrint("Error fetch: $e");
+      setState(() => isLoading = false);
+    }
   }
 
-  // Fungsi hapus menu dengan konfirmasi
   Future<void> deleteMenu(int id) async {
     final confirm = await showDialog<bool>(
       context: context,
@@ -42,7 +51,7 @@ class _MenuScreenState extends State<MenuScreen> {
         content: const Text("Apakah Anda yakin ingin menghapus menu ini?"),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context, true),
+            onPressed: () => Navigator.pop(context, false),
             child: const Text("Batal"),
           ),
           TextButton(
@@ -54,9 +63,12 @@ class _MenuScreenState extends State<MenuScreen> {
     );
 
     if (confirm == true) {
-      await Supabase.instance.client.from('daftar_menu').delete().eq('id', id);
+      await Supabase.instance.client
+          .from('daftar_menu')
+          .delete()
+          .eq('id', id);
 
-      fetchMenu(); // refresh list
+      fetchMenu();
     }
   }
 
@@ -76,7 +88,7 @@ class _MenuScreenState extends State<MenuScreen> {
                 context,
                 MaterialPageRoute(builder: (_) => const FormMenuScreen()),
               ).then((value) {
-                if (value == true) fetchMenu(); // refresh setelah tambah
+                if (value == true) fetchMenu();
               });
             },
           ),
@@ -86,93 +98,101 @@ class _MenuScreenState extends State<MenuScreen> {
           ? const Center(child: CircularProgressIndicator(color: Colors.white))
           : daftarMenu.isEmpty
           ? const Center(
-              child: Text(
-                "Tidak ada data",
-                style: TextStyle(color: Colors.white),
-              ),
-            )
+        child: Text(
+          "Tidak ada data",
+          style: TextStyle(color: Colors.white),
+        ),
+      )
           : ListView.builder(
-              padding: const EdgeInsets.all(12),
-              itemCount: daftarMenu.length,
-              itemBuilder: (context, index) {
-                final menu = daftarMenu[index];
-                return Card(
-                  color: const Color(0xFF5A0E0E),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  margin: const EdgeInsets.only(bottom: 16),
-                  child: ListTile(
-                    title: Text(
-                      menu['nama_makanan'],
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
-                      ),
-                    ),
-                    subtitle: Padding(
-                      padding: const EdgeInsets.only(top: 12),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            "Jenis Makanan: ${menu['jenis_makanan']}",
-                            style: const TextStyle(color: Colors.white70),
-                          ),
-                          Text(
-                            "Penerima: ${menu['penerima']}",
-                            style: const TextStyle(color: Colors.white70),
-                          ),
-                          Text(
-                            "Hari Tersedia: ${menu['hari_tersedia']}",
-                            style: const TextStyle(color: Colors.white70),
-                          ),
-                          const SizedBox(height: 10),
-                          Row(
-                            children: [
-                              IconButton(
-                                icon: const Icon(
-                                  Icons.edit,
-                                  color: Colors.white,
-                                ),
-                                onPressed: () async {
-                                  final result = await Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) =>
-                                          EditMenuScreen(menu: menu),
-                                    ),
-                                  );
+        padding: const EdgeInsets.all(12),
+        itemCount: daftarMenu.length,
+        itemBuilder: (context, index) {
+          final menu = daftarMenu[index];
+          final fotoUrl = menu['foto_url'] ?? '';
 
-                                  if (result == true) fetchMenu();
-                                },
-                              ),
-                              IconButton(
-                                icon: const Icon(
-                                  Icons.delete,
-                                  color: Colors.red,
-                                ),
-                                onPressed: () => deleteMenu(menu['id']),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                    trailing: Container(
-                      width: 100,
-                      height: 100,
-                      decoration: BoxDecoration(
-                        color: Colors.grey[300],
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Icon(Icons.image, size: 40),
-                    ),
-                  ),
-                );
-              },
+          return Card(
+            color: const Color(0xFF5A0E0E),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
             ),
+            margin: const EdgeInsets.only(bottom: 16),
+            child: ListTile(
+              title: Text(
+                menu['nama_makanan'],
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                ),
+              ),
+              subtitle: Padding(
+                padding: const EdgeInsets.only(top: 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Jenis Makanan: ${menu['jenis_makanan']}",
+                      style: const TextStyle(color: Colors.white70),
+                    ),
+                    Text(
+                      "Penerima: ${menu['penerima']}",
+                      style: const TextStyle(color: Colors.white70),
+                    ),
+                    Text(
+                      "Hari Tersedia: ${menu['hari_tersedia']}",
+                      style: const TextStyle(color: Colors.white70),
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.edit,
+                              color: Colors.white),
+                          onPressed: () async {
+                            final result = await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) =>
+                                    EditMenuScreen(menu: menu),
+                              ),
+                            );
+                            if (result == true) fetchMenu();
+                          },
+                        ),
+                        IconButton(
+                          icon:
+                          const Icon(Icons.delete, color: Colors.red),
+                          onPressed: () => deleteMenu(menu['id']),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              trailing: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: SizedBox(
+                  width: 90,
+                  height: 90,
+                  child: fotoUrl.isNotEmpty
+                      ? Image.network(
+                    fotoUrl,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) =>
+                    const Icon(Icons.broken_image,
+                        size: 40, color: Colors.white),
+                  )
+                      : Container(
+                    color: Colors.black26,
+                    child: const Icon(Icons.image_not_supported,
+                        size: 40, color: Colors.white70),
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 }

@@ -198,6 +198,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
                         email: _userIdController.text.trim(),
                         password: _passwordController.text.trim(),
                         username: _usernameController.text.trim(),
+                        alamat: _alamatController.text.trim(),
                       );
                       Navigator.push(
                         (context),

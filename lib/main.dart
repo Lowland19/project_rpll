@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:project_rpll/providers/auth_provider.dart';
 import 'package:project_rpll/screens/home_screen.dart';
-import 'package:project_rpll/screens/login_screen.dart';
+import 'package:project_rpll/screens/autentifikasi/login_screen.dart';
 import 'package:project_rpll/screens/start_screen.dart';
+import 'package:project_rpll/services/profiles_service.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -14,11 +15,17 @@ Future<void> main() async {
     anonKey:
         'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5sbGNycmhhb3BreGlvbnV2emxwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI1NjUyMzQsImV4cCI6MjA3ODE0MTIzNH0.Ep_nBYRK8lNbLo_TppCmYsXFNuBs6yB6sAl66IiL964',
   );
-runApp(
-MultiProvider(providers: [
-  ListenableProvider<AuthProvider>(create: (_) => AuthProvider()),
-],child: const MyApp())
-);
+  runApp(
+    MultiProvider(
+      providers: [
+        ListenableProvider<AuthProvider>(create: (_) => AuthProvider()),
+        ChangeNotifierProvider(
+          create: (_) => ProfileService()..fetchUserProfile(),
+        ),
+      ],
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -51,21 +58,23 @@ class MyApp extends StatelessWidget {
     );
   }
 }
+
 class AuthGuard extends StatelessWidget {
   const AuthGuard({super.key});
 
   @override
   Widget build(BuildContext context) {
     return StreamBuilder(
-        stream: Supabase.instance.client.auth.onAuthStateChange,
-        builder: (context, snapshot) {
-          if (snapshot.hasData) {
-            final session = snapshot.data!.session;
-            if (session == null) {
-              return const LoginScreen();
-            }
+      stream: Supabase.instance.client.auth.onAuthStateChange,
+      builder: (context, snapshot) {
+        if (snapshot.hasData) {
+          final session = snapshot.data!.session;
+          if (session == null) {
+            return const LoginScreen();
           }
-          return const HomeScreen();
-        });
+        }
+        return const HomeScreen();
+      },
+    );
   }
 }

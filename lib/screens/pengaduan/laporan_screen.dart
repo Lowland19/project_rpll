@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:project_rpll/screens/detil_laporan.dart';
+import 'package:project_rpll/screens/pengaduan/detil_laporan.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class LaporanScreen extends StatefulWidget {

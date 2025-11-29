@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:project_rpll/screens/login_screen.dart';
-import 'package:project_rpll/screens/registration_page.dart';
+import 'package:project_rpll/screens/autentifikasi/login_screen.dart';
+import 'package:project_rpll/screens/autentifikasi/registration_page.dart';
 
 class StartScreen extends StatelessWidget {
   const StartScreen({super.key});
@@ -10,11 +10,7 @@ class StartScreen extends StatelessWidget {
     return Scaffold(
       body: Stack(
         children: [
-          Container(
-            decoration: const BoxDecoration(
-              color: Color(0xFF3B0E0E),
-            ),
-          ),
+          Container(decoration: const BoxDecoration(color: Color(0xFF3B0E0E))),
 
           Positioned(
             top: -40,

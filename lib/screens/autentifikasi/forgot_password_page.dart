@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/auth_provider.dart';
+import '../../providers/auth_provider.dart';
 
 class ForgotPasswordPage extends StatefulWidget {
   const ForgotPasswordPage({super.key});
@@ -72,7 +72,11 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
             const SizedBox(height: 170),
             const Text(
               "Lupa Password",
-              style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+              ),
             ),
             const SizedBox(height: 20),
 
@@ -83,8 +87,12 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                 labelText: 'Email / User ID',
                 labelStyle: TextStyle(color: Colors.white),
                 prefixIcon: Icon(Icons.email, color: Colors.white),
-                enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.white)),
-                focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.white)),
+                enabledBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.white),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.white),
+                ),
               ),
               validator: (value) => (value == null || value.isEmpty)
                   ? "Email tidak boleh kosong"
@@ -100,24 +108,34 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                 onPressed: () async {
                   if (_formKey.currentState!.validate()) {
                     try {
-                      await context.read<AuthProvider>().forgotPassword(_emailController.text);
+                      await context.read<AuthProvider>().forgotPassword(
+                        _emailController.text,
+                      );
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text("Link reset password telah dikirim")),
+                        const SnackBar(
+                          content: Text("Link reset password telah dikirim"),
+                        ),
                       );
                     } catch (e) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(e.toString())),
-                      );
+                      ScaffoldMessenger.of(
+                        context,
+                      ).showSnackBar(SnackBar(content: Text(e.toString())));
                     }
                   }
                 },
-                child: const Text("Kirim Reset", style: TextStyle(color: Colors.white)),
+                child: const Text(
+                  "Kirim Reset",
+                  style: TextStyle(color: Colors.white),
+                ),
               ),
             ),
 
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text("Kembali ke Login", style: TextStyle(color: Colors.white70)),
+              child: const Text(
+                "Kembali ke Login",
+                style: TextStyle(color: Colors.white70),
+              ),
             ),
           ],
         ),

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
-import 'package:project_rpll/screens/hasil_pemeriksaan_screen.dart';
+import 'package:project_rpll/screens/pengaduan/hasil_pemeriksaan_screen.dart';
 
 class PemeriksaanScreen extends StatefulWidget {
   const PemeriksaanScreen({super.key});

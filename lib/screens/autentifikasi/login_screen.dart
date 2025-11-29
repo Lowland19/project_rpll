@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:project_rpll/providers/auth_provider.dart';
 import 'package:project_rpll/screens/home_screen.dart';
 import 'package:provider/provider.dart';
-import 'package:project_rpll/screens/forgot_password_page.dart';
-
+import 'package:project_rpll/screens/autentifikasi/forgot_password_page.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -23,11 +22,7 @@ class _LoginScreenState extends State<LoginScreen> {
     return Scaffold(
       body: Stack(
         children: [
-          Container(
-            decoration: const BoxDecoration(
-              color: Color(0xFF3B0E0E),
-            ),
-          ),
+          Container(decoration: const BoxDecoration(color: Color(0xFF3B0E0E))),
 
           Positioned(
             top: -50,
@@ -130,15 +125,19 @@ class _LoginScreenState extends State<LoginScreen> {
                             if (context.mounted) {
                               Navigator.pushAndRemoveUntil(
                                 context,
-                                MaterialPageRoute(builder: (context) => HomeScreen()),
-                                    (route) => false,
+                                MaterialPageRoute(
+                                  builder: (context) => HomeScreen(),
+                                ),
+                                (route) => false,
                               );
                             }
                           } catch (error) {
                             if (!context.mounted) return;
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: Text('Login Gagal: ${error.toString()}'),
+                                content: Text(
+                                  'Login Gagal: ${error.toString()}',
+                                ),
                               ),
                             );
                           }
@@ -169,8 +168,6 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                   ),
-
-
                 ],
               ),
             ),

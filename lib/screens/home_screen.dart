@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:project_rpll/widgets/account_widget.dart';
+import 'package:project_rpll/screens/akun/account_widget.dart';
 import 'package:project_rpll/widgets/home_screen_widget.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -15,7 +15,7 @@ class _HomeScreenState extends State<HomeScreen> {
   // Replace HomeScreen() with the actual content widgets for each tab
   static const List<Widget> _widgetOptions = <Widget>[
     HomeScreenWidget(), // Widget for Home// Placeholder for Laporan
-    AccountWidget(),  // Placeholder for Akun
+    AccountWidget(), // Placeholder for Akun
   ];
 
   void _onItemTapped(int index) {
@@ -31,9 +31,7 @@ class _HomeScreenState extends State<HomeScreen> {
         title: const Text('Aplikasi MBG'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
       ),
-      body: Center(
-        child: _widgetOptions.elementAt(_selectedIndex),
-      ),
+      body: Center(child: _widgetOptions.elementAt(_selectedIndex)),
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),

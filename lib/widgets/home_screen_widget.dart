@@ -1,68 +1,30 @@
 import 'package:flutter/material.dart';
-import 'package:project_rpll/screens/admin_user_screen.dart';
-import 'package:project_rpll/screens/laporan_screen.dart';
-import 'package:project_rpll/screens/menu_screen.dart';
-import 'package:project_rpll/screens/pemeriksaan_screen.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:project_rpll/screens/jadwal_pengiriman.dart';
-import 'package:project_rpll/screens/laporan_pengembalian.dart';
-import 'package:project_rpll/screens/daftar_penerima.dart';
-import 'package:project_rpll/screens/rute_perkiraan_waktu.dart';
+import 'package:project_rpll/screens/akun/admin_user_screen.dart';
+import 'package:project_rpll/screens/pengaduan/laporan_screen.dart';
+import 'package:project_rpll/screens/menu_mbg/menu_screen.dart';
+import 'package:project_rpll/screens/pengaduan/pemeriksaan_screen.dart';
+import 'package:project_rpll/services/profiles_service.dart';
+import 'package:provider/provider.dart';
+import 'package:project_rpll/screens/pengiriman/jadwal_pengiriman.dart';
+import 'package:project_rpll/screens/pengaduan/laporan_pengembalian.dart';
+import 'package:project_rpll/screens/pengiriman/daftar_penerima.dart';
+import 'package:project_rpll/screens/pengiriman/rute_perkiraan_waktu.dart';
 import 'package:project_rpll/widgets/notifikasi_screen.dart';
 
-class HomeScreenWidget extends StatefulWidget {
+class HomeScreenWidget extends StatelessWidget {
   const HomeScreenWidget({super.key});
 
   @override
-  State<HomeScreenWidget> createState() => _HomeScreenWidgetState();
+  Widget build(BuildContext context) {
+    return ChangeNotifierProvider(
+      create: (_) => ProfileService()..fetchUserProfile(),
+      child: _HomeContent(),
+    );
+  }
 }
 
-class _HomeScreenWidgetState extends State<HomeScreenWidget> {
-  String displayName = '';
-  List<String> userRole = [];
-
-  Future<void> getProfileData() async {
-    final supabase = Supabase.instance.client;
-    final userLoggedIn = supabase.auth.currentUser;
-
-    if (userLoggedIn != null) {
-      try {
-        final data = await supabase
-            .from('profiles')
-            .select('username,user_roles(roles(nama_role))')
-            .eq('id', userLoggedIn.id)
-            .single();
-
-        if (mounted) {
-          setState(() {
-            displayName = data['username'] ?? 'User';
-
-            final List rolesData = data['user_roles'] ?? [];
-            if (rolesData.isNotEmpty) {
-              for (var item in rolesData) {
-                if (item['roles'] != null) {
-                  String roleName = item['roles']['nama_role']
-                      .toString()
-                      .toLowerCase();
-                  userRole.add(roleName);
-                }
-              }
-            } else {
-              userRole.add('pendatang');
-            }
-          });
-          print("✅ Role User: $userRole");
-        }
-      } catch (e) {
-        print('Gagal ambil profil : $e');
-        setState(() {
-          displayName = userLoggedIn.userMetadata?['username'] ?? 'User';
-        });
-      }
-    }
-  }
-
-  List<Map<String, dynamic>> get menuItems {
+class _HomeContent extends StatelessWidget {
+  List<Map<String, dynamic>> _getMenuItems(BuildContext context) {
     return [
       {
         'title': "Daftar Pengaduan",
@@ -83,7 +45,7 @@ class _HomeScreenWidgetState extends State<HomeScreenWidget> {
         ),
       },
       {
-        'title': "Perkiraan Waktu Datang",
+        'title': "Perkiraan Waktu",
         'icon': Icons.timer,
         'allowed_roles': ['penanggungjawab_mbg', 'admin'],
         'action': () => Navigator.push(
@@ -100,19 +62,17 @@ class _HomeScreenWidgetState extends State<HomeScreenWidget> {
         'allowed_roles': ['sopir', 'admin'],
         'action': () => Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => const LaporanPengembalian()),
+          MaterialPageRoute(builder: (_) => const LaporanPengembalian()),
         ),
       },
       {
         'title': "Kirim Pengaduan",
         'icon': Icons.send,
         'allowed_roles': ['penanggungjawab_mbg'],
-        'action': () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => PemeriksaanScreen()),
-          );
-        },
+        'action': () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => PemeriksaanScreen()),
+        ),
       },
       {
         'title': "Daftar Menu",
@@ -133,7 +93,7 @@ class _HomeScreenWidgetState extends State<HomeScreenWidget> {
         ),
       },
       {
-        'title': "Kelola User (Admin)",
+        'title': "Kelola User",
         'icon': Icons.person,
         'allowed_roles': ['admin'],
         'action': () => Navigator.push(
@@ -145,81 +105,107 @@ class _HomeScreenWidgetState extends State<HomeScreenWidget> {
   }
 
   @override
-  void initState() {
-    super.initState();
-    getProfileData();
-  }
-
-  @override
   Widget build(BuildContext context) {
+    // 2. KONSUMSI DATA DARI SERVICE
     return Scaffold(
-      body: Stack(
-        children: [
-          Container(decoration: const BoxDecoration(color: Color(0xFF3B0E0E))),
+      body: Consumer<ProfileService>(
+        builder: (context, service, child) {
+          // A. TAMPILAN LOADING
+          if (service.isLoading) {
+            return const Center(child: CircularProgressIndicator());
+          }
 
-          Positioned(
-            top: -50,
-            right: -40,
-            child: Container(
-              width: 160,
-              height: 160,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                color: Color(0xFF5A0E0E),
+          // B. AMBIL DATA DARI MODEL
+          // (Data sudah disiapkan rapi oleh Model & Service)
+          final profile = service.userProfile;
+
+          final String displayName = profile?.username ?? 'User';
+
+          // Ambil List Role dari Model (Model sudah mengurus parsing JSON-nya)
+          final List<String> userRoles = profile?.roles ?? ['pendatang'];
+
+          // C. FILTER MENU BERDASARKAN ROLE
+          final menuList = _getMenuItems(context).where((menu) {
+            List<String> allowed = menu['allowed_roles'];
+            return userRoles.any((myRole) => allowed.contains(myRole));
+          }).toList();
+
+          return Stack(
+            children: [
+              Container(
+                decoration: const BoxDecoration(color: Color(0xFF3B0E0E)),
               ),
-            ),
-          ),
 
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 60),
-                const Text(
-                  "Selamat Datang,",
-                  style: TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
+              // Background Lingkaran
+              Positioned(
+                top: -50,
+                right: -40,
+                child: Container(
+                  width: 160,
+                  height: 160,
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Color(0xFF5A0E0E),
                   ),
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  displayName,
-                  style: const TextStyle(fontSize: 24, color: Colors.white70),
-                ),
-                const SizedBox(height: 32),
+              ),
 
-                Expanded(
-                  child: GridView.count(
-                    crossAxisCount: 2,
-                    crossAxisSpacing: 16,
-                    mainAxisSpacing: 16,
-                    children: menuItems
-                        .where((menu) {
-                          List<String> allowed = menu['allowed_roles'];
-                          return userRole.any(
-                            (myRole) => allowed.contains(myRole),
-                          );
-                        })
-                        .map(
-                          (menu) => _menuCard(
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 60),
+                    const Text(
+                      "Selamat Datang,",
+                      style: TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+
+                    // TAMPILKAN NAMA (DARI SERVICE)
+                    Text(
+                      displayName,
+                      style: const TextStyle(
+                        fontSize: 24,
+                        color: Colors.white70,
+                      ),
+                    ),
+
+                    const SizedBox(height: 32),
+
+                    // GRID MENU (YANG SUDAH DIFILTER)
+                    Expanded(
+                      child: GridView.builder(
+                        itemCount: menuList.length,
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 2,
+                              crossAxisSpacing: 16,
+                              mainAxisSpacing: 16,
+                            ),
+                        itemBuilder: (context, index) {
+                          final menu = menuList[index];
+                          return _menuCard(
                             icon: menu['icon'],
                             title: menu['title'],
                             onTap: menu['action'],
-                          ),
-                        )
-                        .toList(),
-                  ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          ),
-        ],
+              ),
+            ],
+          );
+        },
       ),
 
-      // 🔔 Floating Notifikasi kiri bawah
+      // Floating Action Button (Sama seperti sebelumnya)
       floatingActionButton: Align(
         alignment: Alignment.bottomLeft,
         child: Padding(
@@ -227,12 +213,10 @@ class _HomeScreenWidgetState extends State<HomeScreenWidget> {
           child: FloatingActionButton(
             backgroundColor: const Color(0xFF3B0E0E),
             shape: const CircleBorder(),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const NotifikasiScreen()),
-              );
-            },
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const NotifikasiScreen()),
+            ),
             child: const Icon(
               Icons.notifications,
               color: Colors.white,

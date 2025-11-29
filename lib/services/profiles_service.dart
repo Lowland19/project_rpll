@@ -48,7 +48,7 @@ class ProfileService extends ChangeNotifier {
       final data = await _supabase
           .from('profiles')
           .select(
-            'id, username, email, avatar_url, alamat, lembaga, jumlah_penerima, latitude, longitude, user_roles(roles(nama_role))',
+            'id, username, avatar_url, alamat, lembaga, jumlah_penerima, latitude, longitude, user_roles(roles(nama_role))',
           )
           .eq('id', user.id)
           .single();

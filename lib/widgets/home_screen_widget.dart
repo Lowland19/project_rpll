@@ -16,10 +16,7 @@ class HomeScreenWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => ProfileService()..fetchUserProfile(),
-      child: _HomeContent(),
-    );
+    return _HomeContent();
   }
 }
 
@@ -38,7 +35,7 @@ class _HomeContent extends StatelessWidget {
       {
         'title': "Jadwal Pengiriman",
         'icon': Icons.calendar_month,
-        'allowed_roles': ['sopir', 'admin'],
+        'allowed_roles': ['supir', 'admin'],
         'action': () => Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => const JadwalPengirimanScreen()),
@@ -59,7 +56,7 @@ class _HomeContent extends StatelessWidget {
       {
         'title': "Pengembalian",
         'icon': Icons.assignment_return,
-        'allowed_roles': ['sopir', 'admin'],
+        'allowed_roles': ['supir', 'admin'],
         'action': () => Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => const LaporanPengembalian()),

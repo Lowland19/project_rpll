@@ -89,6 +89,17 @@ class ProfileService extends ChangeNotifier {
     notifyListeners();
   }
 
+  void clearData() {
+    _userProfile = null; // Hapus data user
+    _tempImageFile = null;
+    _tempLat = null;
+    _tempLong = null;
+    _isLoading = true; // Set loading agar user berikutnya melihat loading dulu
+    _errorMessage = null;
+
+    notifyListeners(); // Kabari UI untuk update (jadi kosong/loading)
+  }
+
   // Helper untuk update UI
   void _setLoading(bool value) {
     _isLoading = value;

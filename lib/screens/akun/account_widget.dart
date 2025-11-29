@@ -118,6 +118,7 @@ class AccountWidget extends StatelessWidget {
                       // --- TOMBOL LOGOUT ---
                       ElevatedButton.icon(
                         onPressed: () async {
+                          context.read<ProfileService>().clearData();
                           await context.read<AuthProvider>().logout();
                           if (context.mounted) {
                             Navigator.pushAndRemoveUntil(

@@ -33,9 +33,18 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
             ),
           ),
 
+          // 🔥 Tombol Back di kiri atas
+          Positioned(
+            top: 40,
+            left: 10,
+            child: IconButton(
+              icon: const Icon(Icons.arrow_back, color: Colors.white, size: 28),
+              onPressed: () => Navigator.pop(context),
+            ),
+          ),
+
           _buildContent(),
 
-          // === Kontak Bantuan (INI POSISI YANG BENAR) ===
           const Positioned(
             bottom: 20,
             left: 20,
@@ -117,9 +126,9 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                         ),
                       );
                     } catch (e) {
-                      ScaffoldMessenger.of(
-                        context,
-                      ).showSnackBar(SnackBar(content: Text(e.toString())));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(e.toString())),
+                      );
                     }
                   }
                 },

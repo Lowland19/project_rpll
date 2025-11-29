@@ -1,4 +1,6 @@
 import 'dart:io';
+import 'dart:typed_data'; // <--- Tambahan
+import 'package:flutter/foundation.dart'; // <--- Tambahan untuk kIsWeb
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -16,25 +18,75 @@ class _FormMenuScreenState extends State<FormMenuScreen> {
   String? jenisMakanan;
   String? hariTersedia;
   File? selectedImage;
+  Uint8List? webImage; // <--- Tambahan untuk Web
+
+  final List<Map<String, dynamic>> penerimaList = [
+    {"nama": "PAUD Darul Falah"},
+    {"nama": "Kober Qurrotu'ain Al Istiqomah"},
+    {"nama": "PAUD KENANGA 12"},
+    {"nama": "PAUD Melati 10"},
+    {"nama": "PAUD Mawar Putih"},
+    {"nama": "RA DARUL IKHLAS"},
+    {"nama": "RA Darul Hufadz"},
+    {"nama": "RA Nurul Huda"},
+    {"nama": "Kober Nurul Huda Al Khudlory"},
+    {"nama": "TK DAAIMUL HIDAYAH AL-QURANI"},
+    {"nama": "TK HARAPAN MULYA"},
+    {"nama": "TK PAMEKAR BUDI"},
+    {"nama": "SDN Pasirkaliki Mandiri 1"},
+    {"nama": "SDN Pasirkaliki Mandiri 2"},
+    {"nama": "SMPN 12"},
+    {"nama": "SMAN 3"},
+    {"nama": "SLB B PRIMA BHAKTI"},
+  ];
 
   Future<void> pickImage() async {
     final picker = ImagePicker();
     final picked = await picker.pickImage(source: ImageSource.gallery);
 
     if (picked != null) {
-      setState(() => selectedImage = File(picked.path));
+      if (kIsWeb) {
+        // Web
+        webImage = await picked.readAsBytes();
+      } else {
+        // Android/iOS
+        selectedImage = File(picked.path);
+      }
+      setState(() {});
     }
   }
 
+  // ================= FIXED UPLOAD =================
   Future<String?> uploadImage() async {
-    if (selectedImage == null) return null;
+    if (selectedImage == null && webImage == null) return null;
 
     final fileName = "menu_${DateTime.now().millisecondsSinceEpoch}.jpg";
     final storage = Supabase.instance.client.storage.from("menu_foto");
 
-    await storage.upload(fileName, selectedImage!);
-    return storage.getPublicUrl(fileName);
+    try {
+      if (kIsWeb) {
+        // Upload Web (pakai uploadBinary)
+        await storage.uploadBinary(
+          fileName,
+          webImage!,
+          fileOptions: const FileOptions(contentType: "image/jpeg"),
+        );
+      } else {
+        // Upload Mobile
+        await storage.upload(
+          fileName,
+          selectedImage!,
+          fileOptions: const FileOptions(contentType: "image/jpeg"),
+        );
+      }
+
+      return storage.getPublicUrl(fileName);
+    } catch (e) {
+      print("Upload Error: $e");
+      return null;
+    }
   }
+  // ===============================================
 
   Future<void> saveMenu() async {
     try {
@@ -72,9 +124,10 @@ class _FormMenuScreenState extends State<FormMenuScreen> {
               onTap: pickImage,
               child: CircleAvatar(
                 radius: 60,
-                backgroundImage:
-                selectedImage != null ? FileImage(selectedImage!) : null,
-                child: selectedImage == null
+                backgroundImage: kIsWeb
+                    ? (webImage != null ? MemoryImage(webImage!) : null)
+                    : (selectedImage != null ? FileImage(selectedImage!) : null),
+                child: (webImage == null && selectedImage == null)
                     ? const Icon(Icons.camera_alt, size: 32, color: Colors.white)
                     : null,
               ),
@@ -94,8 +147,13 @@ class _FormMenuScreenState extends State<FormMenuScreen> {
             decoration: inputStyle("Jenis Makanan"),
             onChanged: (v) => setState(() => jenisMakanan = v),
             items: [
-              'Sumber karbohidrat', 'Protein hewani', 'Protein nabati',
-              'Sayur', 'Buah', 'Sumber lemak', 'Susu'
+              'Sumber karbohidrat',
+              'Protein hewani',
+              'Protein nabati',
+              'Sayur',
+              'Buah',
+              'Sumber lemak',
+              'Susu'
             ]
                 .map((e) => DropdownMenuItem(
                 value: e,
@@ -116,10 +174,25 @@ class _FormMenuScreenState extends State<FormMenuScreen> {
                 .toList(),
           ),
           const SizedBox(height: 16),
-          TextField(
-            controller: penerimaController,
+          DropdownButtonFormField(
+            value: penerimaController.text.isNotEmpty ? penerimaController.text : null,
+            dropdownColor: const Color(0xFF5A0E0E),
             style: const TextStyle(color: Colors.white),
             decoration: inputStyle("Penerima"),
+            onChanged: (value) {
+              setState(() {
+                penerimaController.text = value.toString();
+              });
+            },
+            items: penerimaList.map((item) {
+              return DropdownMenuItem(
+                value: item['nama'],
+                child: Text(
+                  item['nama'],
+                  style: const TextStyle(color: Colors.white),
+                ),
+              );
+            }).toList(),
           ),
           const SizedBox(height: 24),
           ElevatedButton(

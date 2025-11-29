@@ -11,7 +11,7 @@ class MenuScreen extends StatefulWidget {
 }
 
 class _MenuScreenState extends State<MenuScreen> {
-  List<dynamic> daftarMenu = [];
+  List<Map<String, dynamic>> daftarMenu = [];
   bool isLoading = true;
 
   @override
@@ -21,16 +21,26 @@ class _MenuScreenState extends State<MenuScreen> {
   }
 
   Future<void> fetchMenu() async {
-    setState(() => isLoading = true);
-    final response = await Supabase.instance.client
-        .from('daftar_menu')
-        .select()
-        .order('id', ascending: true);
+    try {
+      setState(() => isLoading = true);
 
-    setState(() {
-      daftarMenu = response;
-      isLoading = false;
-    });
+      final response = await Supabase.instance.client
+          .from('daftar_menu')
+          .select('*')
+          .order('id', ascending: true);
+
+      setState(() {
+        daftarMenu = response
+            .map<Map<String, dynamic>>(
+                (item) => Map<String, dynamic>.from(item))
+            .toList();
+
+        isLoading = false;
+      });
+    } catch (e) {
+      debugPrint("Error fetch: $e");
+      setState(() => isLoading = false);
+    }
   }
 
   Future<void> deleteMenu(int id) async {
@@ -53,7 +63,11 @@ class _MenuScreenState extends State<MenuScreen> {
     );
 
     if (confirm == true) {
-      await Supabase.instance.client.from('daftar_menu').delete().eq('id', id);
+      await Supabase.instance.client
+          .from('daftar_menu')
+          .delete()
+          .eq('id', id);
+
       fetchMenu();
     }
   }
@@ -94,7 +108,7 @@ class _MenuScreenState extends State<MenuScreen> {
         itemCount: daftarMenu.length,
         itemBuilder: (context, index) {
           final menu = daftarMenu[index];
-          final fotoUrl = menu['foto_url'];
+          final fotoUrl = menu['foto_url'] ?? '';
 
           return Card(
             color: const Color(0xFF5A0E0E),
@@ -132,10 +146,8 @@ class _MenuScreenState extends State<MenuScreen> {
                     Row(
                       children: [
                         IconButton(
-                          icon: const Icon(
-                            Icons.edit,
-                            color: Colors.white,
-                          ),
+                          icon: const Icon(Icons.edit,
+                              color: Colors.white),
                           onPressed: () async {
                             final result = await Navigator.push(
                               context,
@@ -148,10 +160,8 @@ class _MenuScreenState extends State<MenuScreen> {
                           },
                         ),
                         IconButton(
-                          icon: const Icon(
-                            Icons.delete,
-                            color: Colors.red,
-                          ),
+                          icon:
+                          const Icon(Icons.delete, color: Colors.red),
                           onPressed: () => deleteMenu(menu['id']),
                         ),
                       ],
@@ -164,7 +174,7 @@ class _MenuScreenState extends State<MenuScreen> {
                 child: SizedBox(
                   width: 90,
                   height: 90,
-                  child: fotoUrl != null && fotoUrl.isNotEmpty
+                  child: fotoUrl.isNotEmpty
                       ? Image.network(
                     fotoUrl,
                     fit: BoxFit.cover,
@@ -174,11 +184,8 @@ class _MenuScreenState extends State<MenuScreen> {
                   )
                       : Container(
                     color: Colors.black26,
-                    child: const Icon(
-                      Icons.image_not_supported,
-                      size: 40,
-                      color: Colors.white70,
-                    ),
+                    child: const Icon(Icons.image_not_supported,
+                        size: 40, color: Colors.white70),
                   ),
                 ),
               ),

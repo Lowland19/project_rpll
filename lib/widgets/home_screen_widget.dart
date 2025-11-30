@@ -35,7 +35,7 @@ class _HomeContent extends StatelessWidget {
       {
         'title': "Jadwal Pengiriman",
         'icon': Icons.calendar_month,
-        'allowed_roles': ['supir', 'admin'],
+        'allowed_roles': ['sopir', 'admin'],
         'action': () => Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => const JadwalPengirimanScreen()),
@@ -56,7 +56,7 @@ class _HomeContent extends StatelessWidget {
       {
         'title': "Pengembalian",
         'icon': Icons.assignment_return,
-        'allowed_roles': ['supir', 'admin'],
+        'allowed_roles': ['sopir', 'admin'],
         'action': () => Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => const LaporanPengembalian()),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:project_rpll/providers/auth_provider.dart';
 import 'package:project_rpll/screens/home_screen.dart';
+import 'package:project_rpll/services/profiles_service.dart';
 import 'package:provider/provider.dart';
 import 'package:project_rpll/screens/autentifikasi/forgot_password_page.dart';
 
@@ -121,6 +122,9 @@ class _LoginScreenState extends State<LoginScreen> {
                               email: _emailController.text,
                               password: _passwordController.text,
                             );
+                            await context
+                                .read<ProfileService>()
+                                .fetchUserProfile();
 
                             if (context.mounted) {
                               Navigator.pushAndRemoveUntil(

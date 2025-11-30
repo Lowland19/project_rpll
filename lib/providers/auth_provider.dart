@@ -46,7 +46,7 @@ class AuthProvider extends ChangeNotifier {
 
       // Simpan data ke tabel Supabase
       await Supabase.instance.client.from('users').insert({
-        'id': user.id,      // wajib cocok dengan auth.uid()
+        'id': user.id, // wajib cocok dengan auth.uid()
         'email': email,
         'username': username,
         'alamat': alamat,
@@ -75,7 +75,10 @@ class AuthProvider extends ChangeNotifier {
 
   Future<void> forgotPassword(String email) async {
     try {
-      await Supabase.instance.client.auth.resetPasswordForEmail(email);
+      await Supabase.instance.client.auth.resetPasswordForEmail(
+        email,
+        redirectTo: 'com.example.project_rpll://login-callback',
+      );
     } catch (e) {
       throw Exception("Gagal mengirim reset password: $e");
     }

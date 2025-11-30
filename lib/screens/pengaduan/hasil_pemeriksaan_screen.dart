@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:project_rpll/services/pisang_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class HasilPemeriksaanScreen extends StatefulWidget {
@@ -14,6 +15,37 @@ class HasilPemeriksaanScreen extends StatefulWidget {
 class _HasilPemeriksaanScreenState extends State<HasilPemeriksaanScreen> {
   final TextEditingController _deskripsiController = TextEditingController();
   final TextEditingController _penerimaController = TextEditingController();
+
+  final PisangService _classifier = PisangService();
+  bool _isAnalyzing = true; // Untuk loading indicator
+  String _hasilAnalisis = "Sedang menganalisis...";
+
+  @override
+  void initState() {
+    super.initState();
+    // 2. Jalankan analisis saat halaman dibuka
+    _analyzeImage();
+  }
+
+  Future<void> _analyzeImage() async {
+    // Load model dulu
+    await _classifier.loadModel();
+
+    // Jalankan prediksi pada file gambar yang dikirim dari halaman sebelumnya
+    File image = File(widget.imagePath);
+    String result = await _classifier.predict(image);
+
+    if (mounted) {
+      setState(() {
+        _hasilAnalisis = result;
+        _isAnalyzing = false;
+
+        // 3. Auto-fill kolom deskripsi dengan hasil AI
+        // Contoh output: "Pisang Busuk (98.5%)"
+        _deskripsiController.text = "Terdeteksi: $result";
+      });
+    }
+  }
 
   Future<String?> uploadImage(String filePath) async {
     try {
@@ -72,6 +104,7 @@ class _HasilPemeriksaanScreenState extends State<HasilPemeriksaanScreen> {
   void dispose() {
     _deskripsiController.dispose();
     _penerimaController.dispose();
+    _classifier.close();
     super.dispose();
   }
 

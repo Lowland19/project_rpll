@@ -6,29 +6,26 @@ class AuthProvider extends ChangeNotifier {
 
   User? get user => _user;
 
-  // LOGIN
   Future<void> login({required String email, required String password}) async {
     final response = await Supabase.instance.client.auth.signInWithPassword(
       email: email,
       password: password,
     );
-
     if (response.user != null) {
       _user = response.user;
       notifyListeners();
     } else {
-      throw Exception("Login gagal");
+      throw Exception('Login failed');
     }
   }
 
-  // LOGOUT
   Future<void> logout() async {
     await Supabase.instance.client.auth.signOut();
     _user = null;
     notifyListeners();
   }
 
-  // REGISTER + SIMPAN KE TABEL PROFILES
+  // 🔥 Register + Simpan ke tabel `users`
   Future<String?> registerUser({
     required String email,
     required String password,
@@ -42,60 +39,45 @@ class AuthProvider extends ChangeNotifier {
       );
 
       final user = authResponse.user;
-      if (user == null) return "Registrasi gagal";
 
-      // Simpan ke tabel profiles
-      await Supabase.instance.client.from("profiles").insert({
-        "id": user.id,
-        "email": email,
-        "username": username,
-        "alamat": alamat,
+      if (user == null) {
+        return 'Registrasi gagal';
+      }
+
+      // Simpan data ke tabel Supabase
+      await Supabase.instance.client.from('users').insert({
+        'id': user.id,      // wajib cocok dengan auth.uid()
+        'email': email,
+        'username': username,
+        'alamat': alamat,
+        'role': 'pengguna', // opsional
       });
 
-      return null; // sukses
+      return null; // success
     } catch (e) {
       return e.toString();
     }
   }
 
-  // GET USER PROFILE
+  // Ambil data user login
   Future<Map<String, dynamic>?> getUserData() async {
     final currentUser = Supabase.instance.client.auth.currentUser;
     if (currentUser == null) return null;
 
     final response = await Supabase.instance.client
-        .from("profiles")
+        .from('users')
         .select()
-        .eq("id", currentUser.id)
+        .eq('id', currentUser.id)
         .maybeSingle();
 
     return response;
   }
 
-  // RESET PASSWORD (EMAIL LINK)
   Future<void> forgotPassword(String email) async {
     try {
       await Supabase.instance.client.auth.resetPasswordForEmail(email);
     } catch (e) {
-      throw Exception("Gagal mengirim email reset password: $e");
+      throw Exception("Gagal mengirim reset password: $e");
     }
   }
-
-  Future<void> changePassword(String newPassword) async {
-    try {
-      final res = await Supabase.instance.client.auth.updateUser(
-        UserAttributes(password: newPassword),
-      );
-
-      if (res.user != null) {
-        _user = res.user;          // UPDATE USER DI PROVIDER
-        notifyListeners();         // BERITAHU UI ADA PERUBAHAN
-      } else {
-        throw Exception("Gagal mengganti password.");
-      }
-    } catch (e) {
-      throw Exception("Gagal mengganti password: $e");
-    }
-  }
-
 }

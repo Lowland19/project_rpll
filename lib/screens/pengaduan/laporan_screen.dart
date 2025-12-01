@@ -100,7 +100,7 @@ class LaporanScreen extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              "Penerima: ${item.penerimaManfaat}",
+                              "Penerima: ${item.namaLembaga}",
                               style: const TextStyle(color: Colors.white70),
                             ),
                           ],

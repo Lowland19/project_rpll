@@ -1,31 +1,74 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+// --- IMPORT SCREENS ---
 import 'package:project_rpll/screens/akun/admin_user_screen.dart';
 import 'package:project_rpll/screens/pengaduan/laporan_screen.dart';
 import 'package:project_rpll/screens/menu_mbg/menu_screen.dart';
 import 'package:project_rpll/screens/pengaduan/pemeriksaan_screen.dart';
 import 'package:project_rpll/screens/pengiriman/pantau_lokasi_screen.dart';
-import 'package:project_rpll/services/peta_service.dart';
-import 'package:project_rpll/services/profiles_service.dart';
-import 'package:provider/provider.dart';
 import 'package:project_rpll/screens/pengiriman/jadwal_pengiriman.dart';
 import 'package:project_rpll/screens/pengaduan/laporan_pengembalian.dart';
 import 'package:project_rpll/screens/pengiriman/daftar_penerima.dart';
 import 'package:project_rpll/widgets/notifikasi_screen.dart';
+
+// --- IMPORT SERVICES ---
+import 'package:project_rpll/services/peta_service.dart'; // Pastikan nama service benar
+import 'package:project_rpll/services/profiles_service.dart';
 
 class HomeScreenWidget extends StatelessWidget {
   const HomeScreenWidget({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return _HomeContent();
+    return const _HomeContent();
   }
 }
 
-class _HomeContent extends StatelessWidget {
+// 1. CLASS WIDGET (Hanya jembatan)
+class _HomeContent extends StatefulWidget {
+  const _HomeContent();
+
+  @override
+  State<_HomeContent> createState() => _HomeContentState();
+}
+
+// 2. CLASS STATE (Semua logika & UI di sini)
+class _HomeContentState extends State<_HomeContent> {
+  // Instance Service
   final PetaService _petaService = PetaService();
 
+  // State Variables
+  String? _statusPengiriman;
+  bool _isLoadingStatus = true;
+
+  @override
+  void initState() {
+    super.initState();
+    // Cek status pengiriman saat halaman pertama kali dibuka
+    _cekStatusTerkini();
+  }
+
+  // --- FUNGSI CEK STATUS (Otomatis jalan di awal) ---
+  Future<void> _cekStatusTerkini() async {
+    try {
+      final data = await _petaService.cariRuteSaya();
+
+      if (mounted) {
+        setState(() {
+          _statusPengiriman = data?['status'];
+          _isLoadingStatus = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoadingStatus = false);
+      }
+    }
+  }
+
+  // --- FUNGSI KLIK TOMBOL PANTAU ---
   Future<void> _handlePantauSaya(BuildContext context) async {
-    // 1. Loading
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -34,13 +77,10 @@ class _HomeContent extends StatelessWidget {
     );
 
     try {
-      // 2. Panggil Service
       final myJadwal = await _petaService.cariRuteSaya();
 
-      // Tutup Loading
-      if (context.mounted) Navigator.pop(context);
+      if (context.mounted) Navigator.pop(context); // Tutup Loading
 
-      // 3. Navigasi ke Peta Pantau (Jika data ditemukan)
       if (myJadwal != null && context.mounted) {
         Navigator.push(
           context,
@@ -50,28 +90,30 @@ class _HomeContent extends StatelessWidget {
               idMenu: myJadwal['id_menu'] ?? 0,
               latTujuan: myJadwal['lat_tujuan'],
               longTujuan: myJadwal['long_tujuan'],
+              latAsal: myJadwal['lat_dapur'] ?? 0.0,
+              longAsal: myJadwal['long_dapur'] ?? 0.0,
             ),
           ),
         );
       }
     } catch (e) {
-      // Tutup Loading jika error
       if (context.mounted) Navigator.pop(context);
-
-      // Tampilkan Pesan Error dari Service
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(e.toString().replaceAll("Exception: ", "")),
             backgroundColor: Colors.red,
-            duration: const Duration(seconds: 3),
           ),
         );
       }
     }
   }
 
+  // --- LIST MENU ---
   List<Map<String, dynamic>> _getMenuItems(BuildContext context) {
+    // Logic: Jika status 'selesai', tombol jadi non-aktif
+    bool isSelesai = _statusPengiriman == 'selesai';
+
     return [
       {
         'title': "Daftar Pengaduan",
@@ -92,12 +134,12 @@ class _HomeContent extends StatelessWidget {
         ),
       },
       {
-        'title': "Perkiraan Waktu",
+        'title': isSelesai ? "Selesai" : "Perkiraan Waktu",
         'icon': Icons.timer,
         'allowed_roles': ['penanggungjawab_mbg', 'admin'],
-        'action': () {
-          _handlePantauSaya(context);
-        },
+        // Jika selesai, aksi dimatikan (null)
+        'action': isSelesai ? null : () => _handlePantauSaya(context),
+        'isDisabled': isSelesai,
       },
       {
         'title': "Pengembalian",
@@ -149,25 +191,18 @@ class _HomeContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 2. KONSUMSI DATA DARI SERVICE
     return Scaffold(
       body: Consumer<ProfileService>(
         builder: (context, service, child) {
-          // A. TAMPILAN LOADING
           if (service.isLoading) {
             return const Center(child: CircularProgressIndicator());
           }
 
-          // B. AMBIL DATA DARI MODEL
-          // (Data sudah disiapkan rapi oleh Model & Service)
           final profile = service.userProfile;
-
           final String displayName = profile?.username ?? 'User';
-
-          // Ambil List Role dari Model (Model sudah mengurus parsing JSON-nya)
           final List<String> userRoles = profile?.roles ?? ['pendatang'];
 
-          // C. FILTER MENU BERDASARKAN ROLE
+          // Filter Menu
           final menuList = _getMenuItems(context).where((menu) {
             List<String> allowed = menu['allowed_roles'];
             return userRoles.any((myRole) => allowed.contains(myRole));
@@ -178,8 +213,6 @@ class _HomeContent extends StatelessWidget {
               Container(
                 decoration: const BoxDecoration(color: Color(0xFF3B0E0E)),
               ),
-
-              // Background Lingkaran
               Positioned(
                 top: -50,
                 right: -40,
@@ -192,7 +225,6 @@ class _HomeContent extends StatelessWidget {
                   ),
                 ),
               ),
-
               Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(
@@ -208,8 +240,6 @@ class _HomeContent extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 8),
-
-                    // TAMPILKAN NAMA (DARI SERVICE)
                     Text(
                       displayName,
                       style: const TextStyle(
@@ -217,10 +247,7 @@ class _HomeContent extends StatelessWidget {
                         color: Colors.white70,
                       ),
                     ),
-
                     const SizedBox(height: 32),
-
-                    // GRID MENU (YANG SUDAH DIFILTER)
                     Expanded(
                       child: GridView.builder(
                         itemCount: menuList.length,
@@ -236,6 +263,7 @@ class _HomeContent extends StatelessWidget {
                             icon: menu['icon'],
                             title: menu['title'],
                             onTap: menu['action'],
+                            isDisabled: menu['isDisabled'] ?? false,
                           );
                         },
                       ),
@@ -247,8 +275,6 @@ class _HomeContent extends StatelessWidget {
           );
         },
       ),
-
-      // Floating Action Button (Sama seperti sebelumnya)
       floatingActionButton: Align(
         alignment: Alignment.bottomLeft,
         child: Padding(
@@ -275,24 +301,46 @@ class _HomeContent extends StatelessWidget {
   Widget _menuCard({
     required IconData icon,
     required String title,
-    required VoidCallback onTap,
+    required VoidCallback? onTap,
+    bool isDisabled = false,
   }) {
+    final Color cardColor = isDisabled
+        ? Colors.grey.shade700
+        : const Color(0xFF5A0E0E);
+    final Color iconColor = isDisabled ? Colors.white38 : Colors.white;
+    final Color textColor = isDisabled ? Colors.white38 : Colors.white;
+
     return Card(
-      color: const Color(0xFF5A0E0E),
-      elevation: 3,
+      color: cardColor,
+      elevation: isDisabled ? 0 : 3,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: InkWell(
         onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 40, color: Colors.white),
+            Icon(icon, size: 40, color: iconColor),
             const SizedBox(height: 16),
             Text(
               title,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.white),
+              style: TextStyle(color: textColor),
             ),
+
+            // Loading kecil di tombol jika status sedang dicek
+            if (_isLoadingStatus && title == "Perkiraan Waktu")
+              const Padding(
+                padding: EdgeInsets.only(top: 5),
+                child: SizedBox(
+                  width: 10,
+                  height: 10,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 1,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
           ],
         ),
       ),

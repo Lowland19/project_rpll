@@ -37,7 +37,7 @@ class _JadwalPengirimanScreenState extends State<JadwalPengirimanScreen> {
 
     try {
       // LANGKAH 1: Cek dulu di Database
-      List<Map<String, dynamic>> data = await _service.getJadwalHarian();
+      List<Map<String, dynamic>> data = await _service.syncJadwalHarian();
 
       if (data.isNotEmpty) {
         // KASUS A: Data SUDAH ADA di DB

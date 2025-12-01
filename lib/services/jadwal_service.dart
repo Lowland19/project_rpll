@@ -314,8 +314,192 @@ class JadwalService {
         .from('jadwal_pengiriman')
         .update({
           'status': 'selesai',
+          'driver_lat': null, // Hapus data Latitude
+          'driver_long': null,
           // 'waktu_sampai': DateTime.now().toIso8601String(), // jika ada kolom ini
         })
         .eq('id_menu', idMenu);
+  }
+
+  Future<void> updateLokasiRealtime(int idMenu, double lat, double long) async {
+    await _supabase
+        .from('jadwal_pengiriman')
+        .update({'driver_lat': lat, 'driver_long': long})
+        .eq('id_menu', idMenu);
+  }
+
+  // --- FUNGSI BARU: SINKRONISASI (Cek & Tambah Menu Baru) ---
+  Future<List<Map<String, dynamic>>> syncJadwalHarian() async {
+    try {
+      final String hariIni = _getNamaHari();
+      final String todayDate = DateTime.now().toIso8601String().substring(
+        0,
+        10,
+      );
+
+      // 1. Ambil SEMUA MENU yang tersedia hari ini
+      final responseMenu = await _supabase
+          .from('daftar_menu')
+          .select('*, lembaga:id_penerima(*)')
+          .ilike('hari_tersedia', '%$hariIni%');
+      final List<dynamic> allMenus = responseMenu as List<dynamic>;
+
+      if (allMenus.isEmpty) return [];
+
+      // 2. Ambil ID MENU yang SUDAH ADA di tabel jadwal_pengiriman hari ini
+      final responseJadwal = await _supabase
+          .from('jadwal_pengiriman')
+          .select('id_menu')
+          .eq('tanggal_jadwal', todayDate);
+
+      // Buat Set agar pencarian cepat
+      final Set<int> existingMenuIds = (responseJadwal as List)
+          .map((e) => e['id_menu'] as int)
+          .toSet();
+
+      // 3. Filter: Cari Menu yang ID-nya BELUM ada di jadwal
+      final List<dynamic> newMenus = allMenus.where((menu) {
+        return !existingMenuIds.contains(menu['id']);
+      }).toList();
+
+      if (newMenus.isEmpty) {
+        // Jika tidak ada menu baru, langsung kembalikan data gabungan dari DB
+        return getJadwalHarian();
+      }
+
+      // 4. Proses Kalkulasi OSRM hanya untuk MENU BARU
+      final dataDapur = await _supabase
+          .from('lembaga')
+          .select('latitude, longitude')
+          .eq('jenis_lembaga', 'Dapur SPPG')
+          .maybeSingle();
+
+      if (dataDapur == null) throw "Dapur tidak ditemukan";
+
+      LatLng lokasiDapur = LatLng(
+        (dataDapur['latitude'] as num).toDouble(),
+        (dataDapur['longitude'] as num).toDouble(),
+      );
+
+      List<Map<String, dynamic>> newJadwalItems = [];
+
+      for (var itemMenu in newMenus) {
+        final dataSekolah = itemMenu['lembaga'];
+        if (dataSekolah == null || dataSekolah['latitude'] == null) continue;
+
+        double latTujuan = (dataSekolah['latitude'] as num).toDouble();
+        double longTujuan = (dataSekolah['longitude'] as num).toDouble();
+
+        // Hitung Jarak OSRM
+        double jarakMeter = await _getRoadDistance(
+          lokasiDapur.latitude,
+          lokasiDapur.longitude,
+          latTujuan,
+          longTujuan,
+        );
+
+        if (jarakMeter > 99999000) {
+          final Distance distance = const Distance();
+          jarakMeter = distance.as(
+            LengthUnit.Meter,
+            lokasiDapur,
+            LatLng(latTujuan, longTujuan),
+          );
+        }
+
+        // Hitung Skor
+        String jenisMakanan = itemMenu['jenis_makanan'] ?? 'Umum';
+        double skor = 0;
+        String jenisLower = jenisMakanan.toLowerCase();
+
+        // Skor Jenis Makanan
+        if (jenisLower.contains('sayur'))
+          skor += 500;
+        else if (jenisLower.contains('buah'))
+          skor += 400;
+        else if (jenisLower.contains('protein hewani'))
+          skor += 300;
+        else if (jenisLower.contains('susu'))
+          skor += 200;
+        else if (jenisLower.contains('protein nabati'))
+          skor += 100;
+        else if (jenisLower.contains('sumber karbohidrat'))
+          skor += 50;
+        else if (jenisLower.contains('sumber lemak'))
+          skor += 25;
+        else
+          skor += 0;
+        skor += (100 - (jarakMeter / 1000));
+        skor += ((dataSekolah['jumlah_penerima'] ?? 0) / 10);
+
+        newJadwalItems.add({
+          'id_menu': itemMenu['id'],
+          'skor_prioritas': skor,
+          'jarak_meter': jarakMeter,
+          'status': 'pending',
+          'tanggal_jadwal': todayDate,
+        });
+      }
+
+      // 5. Insert HANYA data baru ke Database
+      if (newJadwalItems.isNotEmpty) {
+        await _supabase.from('jadwal_pengiriman').insert(newJadwalItems);
+        debugPrint("Menambahkan ${newJadwalItems.length} menu baru ke jadwal.");
+      }
+
+      // 6. Ambil ulang semua data terbaru dari DB untuk ditampilkan
+      return getJadwalHarian();
+    } catch (e) {
+      debugPrint("Sync Error: $e");
+      rethrow;
+    }
+  }
+
+  Future<void> simpanNotifikasi({
+    required String judul,
+    required String pesan,
+  }) async {
+    final user = _supabase.auth.currentUser;
+    if (user == null) return;
+
+    await _supabase.from('notifikasi').insert({
+      'judul': judul,
+      'pesan': pesan,
+      'user_id': user.id, // Disimpan untuk user yang sedang login
+      'is_read': false,
+    });
+  }
+
+  // 2. AMBIL DAFTAR NOTIFIKASI
+  Stream<List<Map<String, dynamic>>> getNotifikasiSaya() {
+    final user = _supabase.auth.currentUser;
+    if (user == null) return const Stream.empty();
+
+    return _supabase
+        .from('notifikasi')
+        .stream(primaryKey: ['id'])
+        .eq('user_id', user.id)
+        .order('created_at', ascending: false); // Yang baru di atas
+  }
+
+  Future<int> cekJumlahTugasHariIni() async {
+    try {
+      final String todayDate = DateTime.now().toIso8601String().substring(
+        0,
+        10,
+      );
+
+      // Hitung jadwal hari ini yang statusnya masih pending
+      final response = await _supabase
+          .from('jadwal_pengiriman')
+          .select('id') // Kita cuma butuh hitung ID-nya saja
+          .eq('tanggal_jadwal', todayDate)
+          .eq('status', 'pending'); // Hanya yang belum selesai
+
+      final List data = response as List;
+      return data.length; // Mengembalikan jumlah tugas (misal: 5)
+    } catch (e) {
+      return 0;
+    }
   }
 }

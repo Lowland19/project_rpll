@@ -17,48 +17,59 @@ class EditMenuScreen extends StatefulWidget {
 
 class _EditMenuScreenState extends State<EditMenuScreen> {
   late TextEditingController namaController;
-  late TextEditingController penerimaController;
-  late String? jenisMakanan;
-  late String? hariTersedia;
+
+  // Ganti controller teks dengan Variabel ID
+  int? selectedPenerimaId;
+
+  String? jenisMakanan;
+  String? hariTersedia;
 
   File? selectedImage;
   Uint8List? webImage;
   String? fotoUrl;
 
-  final List<Map<String, dynamic>> penerimaList = [
-    {"nama": "PAUD Darul Falah"},
-    {"nama": "Kober Qurrotu'ain Al Istiqomah"},
-    {"nama": "PAUD KENANGA 12"},
-    {"nama": "PAUD Melati 10"},
-    {"nama": "PAUD Mawar Putih"},
-    {"nama": "RA DARUL IKHLAS"},
-    {"nama": "RA Darul Hufadz"},
-    {"nama": "RA Nurul Huda"},
-    {"nama": "Kober Nurul Huda Al Khudlory"},
-    {"nama": "TK DAAIMUL HIDAYAH AL-QURANI"},
-    {"nama": "TK HARAPAN MULYA"},
-    {"nama": "TK PAMEKAR BUDI"},
-    {"nama": "SDN Pasirkaliki Mandiri 1"},
-    {"nama": "SDN Pasirkaliki Mandiri 2"},
-    {"nama": "SMPN 12"},
-    {"nama": "SMAN 3"},
-    {"nama": "SLB B PRIMA BHAKTI"},
-  ];
+  // List Data Lembaga dari DB
+  List<Map<String, dynamic>> lembagaList = [];
+  bool isLoadingLembaga = true;
 
   @override
   void initState() {
     super.initState();
+
+    // 1. Isi data awal dari Menu yang dipilih
     namaController = TextEditingController(text: widget.menu['nama_makanan']);
-    penerimaController = TextEditingController(text: widget.menu['penerima']);
     jenisMakanan = widget.menu['jenis_makanan'];
     hariTersedia = widget.menu['hari_tersedia'];
     fotoUrl = widget.menu['foto_url'];
+
+    // Ambil ID Penerima Lama
+    selectedPenerimaId = widget.menu['id_penerima'];
+
+    // 2. Ambil List Lembaga buat Dropdown
+    fetchLembaga();
   }
 
+  Future<void> fetchLembaga() async {
+    try {
+      final response = await Supabase.instance.client
+          .from('lembaga')
+          .select('id, nama_lembaga')
+          .order('nama_lembaga', ascending: true);
+
+      setState(() {
+        lembagaList = List<Map<String, dynamic>>.from(response);
+        isLoadingLembaga = false;
+      });
+    } catch (e) {
+      print("Error fetching lembaga: $e");
+      setState(() => isLoadingLembaga = false);
+    }
+  }
+
+  // ... (Fungsi Pick Image & Upload Image SAMA PERSIS seperti sebelumnya) ...
   Future<void> pickImage() async {
     final picker = ImagePicker();
     final picked = await picker.pickImage(source: ImageSource.gallery);
-
     if (picked != null) {
       if (kIsWeb) {
         webImage = await picked.readAsBytes();
@@ -69,13 +80,10 @@ class _EditMenuScreenState extends State<EditMenuScreen> {
     }
   }
 
-  // ================= FIXED UPLOAD =================
   Future<String?> uploadImage() async {
     if (selectedImage == null && webImage == null) return fotoUrl;
-
     final fileName = "menu_${DateTime.now().millisecondsSinceEpoch}.jpg";
     final storage = Supabase.instance.client.storage.from("menu_foto");
-
     try {
       if (kIsWeb) {
         await storage.uploadBinary(
@@ -86,39 +94,50 @@ class _EditMenuScreenState extends State<EditMenuScreen> {
       } else {
         final mimeType = lookupMimeType(selectedImage!.path);
         final bytes = await selectedImage!.readAsBytes();
-
         await storage.uploadBinary(
           fileName,
           bytes,
           fileOptions: FileOptions(contentType: mimeType),
         );
       }
-
       return storage.getPublicUrl(fileName);
     } catch (e) {
-      print("Upload Error: $e");
       return fotoUrl;
     }
   }
-  // ===============================================
+  // ... (End Fungsi Image) ...
 
   Future<void> updateMenu() async {
+    // Validasi
+    if (selectedPenerimaId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Harap pilih penerima manfaat")),
+      );
+      return;
+    }
+
     try {
       final imageUrl = await uploadImage();
 
-      await Supabase.instance.client.from('daftar_menu').update({
-        'nama_makanan': namaController.text,
-        'penerima': penerimaController.text,
-        'jenis_makanan': jenisMakanan,
-        'hari_tersedia': hariTersedia,
-        'foto_url': imageUrl,
-      }).eq('id', widget.menu['id']);
+      // 3. Update Database dengan ID Baru
+      await Supabase.instance.client
+          .from('daftar_menu')
+          .update({
+            'nama_makanan': namaController.text,
+            'jenis_makanan': jenisMakanan,
+            'hari_tersedia': hariTersedia,
+            'id_penerima': selectedPenerimaId, // Update ID Penerima
+            'foto_url': imageUrl,
+          })
+          .eq('id', widget.menu['id']);
 
-      Navigator.pop(context, true);
+      if (mounted) Navigator.pop(context, true);
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Gagal Update: $e")),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("Gagal Update: $e")));
+      }
     }
   }
 
@@ -134,6 +153,7 @@ class _EditMenuScreenState extends State<EditMenuScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          // FOTO
           Center(
             child: GestureDetector(
               onTap: pickImage,
@@ -144,45 +164,61 @@ class _EditMenuScreenState extends State<EditMenuScreen> {
                     : selectedImage != null
                     ? FileImage(selectedImage!)
                     : (fotoUrl != null ? NetworkImage(fotoUrl!) : null)
-                as ImageProvider?,
-                child: (selectedImage == null && webImage == null && fotoUrl == null)
-                    ? const Icon(Icons.camera_alt, size: 32, color: Colors.white)
+                          as ImageProvider?,
+                child:
+                    (selectedImage == null &&
+                        webImage == null &&
+                        fotoUrl == null)
+                    ? const Icon(
+                        Icons.camera_alt,
+                        size: 32,
+                        color: Colors.white,
+                      )
                     : null,
               ),
             ),
           ),
-
           const SizedBox(height: 16),
+
+          // NAMA
           TextField(
             controller: namaController,
             style: const TextStyle(color: Colors.white),
             decoration: inputStyle("Nama"),
           ),
-
           const SizedBox(height: 16),
+
+          // JENIS
           DropdownButtonFormField(
             value: jenisMakanan,
             dropdownColor: const Color(0xFF5A0E0E),
             style: const TextStyle(color: Colors.white),
             decoration: inputStyle("Jenis Makanan"),
             onChanged: (v) => setState(() => jenisMakanan = v),
-            items: [
-              'Sumber karbohidrat',
-              'Protein hewani',
-              'Protein nabati',
-              'Sayur',
-              'Buah',
-              'Sumber lemak',
-              'Susu'
-            ]
-                .map((e) => DropdownMenuItem(
-              value: e,
-              child: Text(e, style: const TextStyle(color: Colors.white)),
-            ))
-                .toList(),
+            items:
+                [
+                      'Sumber karbohidrat',
+                      'Protein hewani',
+                      'Protein nabati',
+                      'Sayur',
+                      'Buah',
+                      'Sumber lemak',
+                      'Susu',
+                    ]
+                    .map(
+                      (e) => DropdownMenuItem(
+                        value: e,
+                        child: Text(
+                          e,
+                          style: const TextStyle(color: Colors.white),
+                        ),
+                      ),
+                    )
+                    .toList(),
           ),
-
           const SizedBox(height: 16),
+
+          // HARI
           DropdownButtonFormField(
             value: hariTersedia,
             dropdownColor: const Color(0xFF5A0E0E),
@@ -190,43 +226,54 @@ class _EditMenuScreenState extends State<EditMenuScreen> {
             decoration: inputStyle("Hari Tersedia"),
             onChanged: (v) => setState(() => hariTersedia = v),
             items: ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat']
-                .map((e) => DropdownMenuItem(
-              value: e,
-              child: Text(e, style: const TextStyle(color: Colors.white)),
-            ))
+                .map(
+                  (e) => DropdownMenuItem(
+                    value: e,
+                    child: Text(e, style: const TextStyle(color: Colors.white)),
+                  ),
+                )
                 .toList(),
           ),
-
           const SizedBox(height: 16),
-          DropdownButtonFormField(
-            value: penerimaController.text.isNotEmpty
-                ? penerimaController.text
-                : null,
-            dropdownColor: const Color(0xFF5A0E0E),
-            style: const TextStyle(color: Colors.white),
-            decoration: inputStyle("Penerima"),
-            onChanged: (value) {
-              setState(() {
-                penerimaController.text = value.toString();
-              });
-            },
-            items: penerimaList
-                .map((item) => DropdownMenuItem(
-              value: item['nama'],
-              child: Text(item['nama'],
-                  style: const TextStyle(color: Colors.white)),
-            ))
-                .toList(),
-          ),
 
+          // ==========================================
+          // DROPDOWN PENERIMA (SEARCHABLE / BIASA)
+          // ==========================================
+          // Disini saya pakai DropdownButton biasa agar sama gaya-nya dengan form lain.
+          // Jika ingin Searchable, ganti dengan DropdownMenu seperti FormMenuScreen.
+          isLoadingLembaga
+              ? const Center(child: CircularProgressIndicator())
+              : DropdownButtonFormField<int>(
+                  value: selectedPenerimaId, // Nilai Awal dari DB
+                  dropdownColor: const Color(0xFF5A0E0E),
+                  style: const TextStyle(color: Colors.white),
+                  decoration: inputStyle("Penerima Manfaat"),
+                  items: lembagaList.map((item) {
+                    return DropdownMenuItem<int>(
+                      value: item['id'], // ID
+                      child: Text(
+                        item['nama_lembaga'], // Nama Teks
+                        style: const TextStyle(color: Colors.white),
+                      ),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    setState(() => selectedPenerimaId = value);
+                  },
+                ),
+
+          // ==========================================
           const SizedBox(height: 24),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-                padding: const EdgeInsets.all(14)),
+              backgroundColor: Colors.red,
+              padding: const EdgeInsets.all(14),
+            ),
             onPressed: updateMenu,
-            child: const Text("Simpan Perubahan",
-                style: TextStyle(color: Colors.white)),
+            child: const Text(
+              "Simpan Perubahan",
+              style: TextStyle(color: Colors.white),
+            ),
           ),
         ],
       ),

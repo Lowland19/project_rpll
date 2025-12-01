@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:project_rpll/screens/autentifikasi/login_screen.dart';
 import 'package:project_rpll/screens/home_screen.dart';
 import 'package:provider/provider.dart';
 
@@ -202,7 +203,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
                       );
                       Navigator.push(
                         (context),
-                        MaterialPageRoute(builder: (context) => HomeScreen()),
+                        MaterialPageRoute(builder: (context) => LoginScreen()),
                       );
                     } catch (error) {
                       if (!context.mounted) return;

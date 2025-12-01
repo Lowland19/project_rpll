@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 // import 'package:intl/intl.dart'; // Hapus ini karena tidak dipakai lagi
-import 'package:project_rpll/services/pengaduan_service.dart';
+import 'package:project_rpll/services/pengembalian_service.dart';
 
 class LaporanPengembalian extends StatelessWidget {
   const LaporanPengembalian({super.key});
@@ -9,7 +9,7 @@ class LaporanPengembalian extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) => PengaduanService()..fetchPengembalian(),
+      create: (_) => PengembalianService()..fetchPengembalian(),
       child: Scaffold(
         backgroundColor: const Color(0xFF3B0E0E),
         body: SafeArea(
@@ -88,7 +88,7 @@ class LaporanPengembalian extends StatelessWidget {
 
                     // LIST DATA
                     Expanded(
-                      child: Consumer<PengaduanService>(
+                      child: Consumer<PengembalianService>(
                         builder: (context, service, child) {
                           if (service.isLoading) {
                             return const Center(

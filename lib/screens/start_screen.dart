@@ -36,7 +36,7 @@ class StartScreen extends StatelessWidget {
                   const SizedBox(height: 72),
 
                   const Text(
-                    'Sistem Monitoring &',
+                    'MBG',
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
@@ -44,7 +44,7 @@ class StartScreen extends StatelessWidget {
                     ),
                   ),
                   const Text(
-                    'Pelaporan MBG',
+                    'Smart System',
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
@@ -53,9 +53,9 @@ class StartScreen extends StatelessWidget {
                   ),
 
                   Image(
-                    image: const AssetImage('lib/assets/images/logo.jpg'),
-                    height: 300,
-                    width: 300,
+                    image: const AssetImage('lib/assets/images/logo.png'),
+                    height: 150,
+                    width: 150,
                   ),
 
                   const SizedBox(height: 96),

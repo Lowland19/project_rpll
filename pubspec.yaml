@@ -41,6 +41,7 @@ dependencies:
   tflite_flutter: ^0.12.1
   image: ^4.5.4
   geolocator: ^14.0.2
+  flutter_launcher_icons: ^0.14.4
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
@@ -68,7 +69,11 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
-
+flutter_launcher_icons:
+  android: "ic_launcher" # Nama icon untuk Android
+  ios: true              # Aktifkan untuk iOS
+  image_path: "assets/icons/icons.png" # Lokasi file logo Anda
+  min_sdk_android: 21
   # To add assets to your application, add an assets section, like this:
   # assets:
   #   - images/a_dot_burr.jpeg

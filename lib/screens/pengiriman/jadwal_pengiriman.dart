@@ -53,7 +53,7 @@ class _JadwalPengirimanScreenState extends State<JadwalPengirimanScreen> {
       // --- PERUBAHAN DI SINI ---
       // 2. AMBIL MENU HARI INI (Cari jenis makanannya)
       String hariIni = _getHariIni(); // Misal: "Rabu"
-      String jenisMakananHariIni = 'kering'; // Default
+      String jenisMakananHariIni = '_'; // Default
       String namaMenuHariIni = 'Tidak ada menu';
 
       final dataMenu = await supabase

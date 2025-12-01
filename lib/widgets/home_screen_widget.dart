@@ -3,12 +3,13 @@ import 'package:project_rpll/screens/akun/admin_user_screen.dart';
 import 'package:project_rpll/screens/pengaduan/laporan_screen.dart';
 import 'package:project_rpll/screens/menu_mbg/menu_screen.dart';
 import 'package:project_rpll/screens/pengaduan/pemeriksaan_screen.dart';
+import 'package:project_rpll/screens/pengiriman/pantau_lokasi_screen.dart';
+import 'package:project_rpll/services/peta_service.dart';
 import 'package:project_rpll/services/profiles_service.dart';
 import 'package:provider/provider.dart';
 import 'package:project_rpll/screens/pengiriman/jadwal_pengiriman.dart';
 import 'package:project_rpll/screens/pengaduan/laporan_pengembalian.dart';
 import 'package:project_rpll/screens/pengiriman/daftar_penerima.dart';
-import 'package:project_rpll/screens/pengiriman/rute_perkiraan_waktu.dart';
 import 'package:project_rpll/widgets/notifikasi_screen.dart';
 
 class HomeScreenWidget extends StatelessWidget {
@@ -21,6 +22,55 @@ class HomeScreenWidget extends StatelessWidget {
 }
 
 class _HomeContent extends StatelessWidget {
+  final PetaService _petaService = PetaService();
+
+  Future<void> _handlePantauSaya(BuildContext context) async {
+    // 1. Loading
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) =>
+          const Center(child: CircularProgressIndicator(color: Colors.white)),
+    );
+
+    try {
+      // 2. Panggil Service
+      final myJadwal = await _petaService.cariRuteSaya();
+
+      // Tutup Loading
+      if (context.mounted) Navigator.pop(context);
+
+      // 3. Navigasi ke Peta Pantau (Jika data ditemukan)
+      if (myJadwal != null && context.mounted) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => PantauLokasiScreen(
+              namaSekolah: myJadwal['nama'],
+              idMenu: myJadwal['id_menu'] ?? 0,
+              latTujuan: myJadwal['lat_tujuan'],
+              longTujuan: myJadwal['long_tujuan'],
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      // Tutup Loading jika error
+      if (context.mounted) Navigator.pop(context);
+
+      // Tampilkan Pesan Error dari Service
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString().replaceAll("Exception: ", "")),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    }
+  }
+
   List<Map<String, dynamic>> _getMenuItems(BuildContext context) {
     return [
       {
@@ -45,13 +95,9 @@ class _HomeContent extends StatelessWidget {
         'title': "Perkiraan Waktu",
         'icon': Icons.timer,
         'allowed_roles': ['penanggungjawab_mbg', 'admin'],
-        'action': () => Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) =>
-                RutePerkiraanWaktuScreen(jam: "09.30", sekolah: "SMA 3"),
-          ),
-        ),
+        'action': () {
+          _handlePantauSaya(context);
+        },
       },
       {
         'title': "Pengembalian",

@@ -54,8 +54,9 @@ class JadwalService {
         // Skip jika menu ini tidak punya data sekolah (relasi null) atau koordinat null
         if (dataSekolah == null || dataSekolah['latitude'] == null) continue;
 
-        double latTujuan = (dataSekolah['latitude'] as num).toDouble();
-        double longTujuan = (dataSekolah['longitude'] as num).toDouble();
+        double latTujuan = (dataSekolah['latitude'] as num?)?.toDouble() ?? 0.0;
+        double longTujuan =
+            (dataSekolah['longitude'] as num?)?.toDouble() ?? 0.0;
         String namaSekolah = dataSekolah['nama_lembaga'] ?? 'Tanpa Nama';
 
         // Ambil Menu Spesifik untuk sekolah ini
@@ -110,14 +111,21 @@ class JadwalService {
         skor += (jumlahSiswa / 10);
 
         hasilJadwal.add({
+          'id_menu': itemMenu['id'],
           'nama': namaSekolah, // Nama Sekolah
           'menu': namaMakanan, // Menu KHUSUS sekolah ini (Bukan 'test10' semua)
           'jenis': jenisMakanan,
           'jumlah': jumlahSiswa,
+          'jarak_meter': jarakMeter,
           'jarak_text': "${(jarakMeter / 1000).toStringAsFixed(1)} km",
           'skor': skor,
+
           'lat_tujuan': latTujuan,
           'long_tujuan': longTujuan,
+
+          // TAMBAHKAN INI (Koordinat Asal):
+          'lat_dapur': lokasiDapur.latitude,
+          'long_dapur': lokasiDapur.longitude,
         });
       }
 
@@ -167,5 +175,147 @@ class JadwalService {
     } catch (e) {
       return 99999999;
     }
+  }
+
+  Future<List<Map<String, dynamic>>> getJadwalHarian() async {
+    try {
+      final String todayDate = DateTime.now().toIso8601String().substring(
+        0,
+        10,
+      );
+
+      // 1. Ambil Lokasi Dapur dulu (untuk koordinat asal rute)
+      //    (Karena tabel jadwal cuma simpan data tujuan, kita butuh data asal juga)
+      final dataDapur = await _supabase
+          .from('lembaga')
+          .select('latitude, longitude')
+          .eq('jenis_lembaga', 'Dapur SPPG')
+          .maybeSingle();
+
+      double latDapur = 0;
+      double longDapur = 0;
+      if (dataDapur != null) {
+        latDapur = (dataDapur['latitude'] as num).toDouble();
+        longDapur = (dataDapur['longitude'] as num).toDouble();
+      }
+
+      // 2. Query Data Jadwal (Join Bertingkat)
+      // jadwal_pengiriman -> daftar_menu -> lembaga
+      final response = await _supabase
+          .from('jadwal_pengiriman')
+          .select('''
+            *,
+            daftar_menu (
+              nama_makanan,
+              jenis_makanan,
+              lembaga (
+                nama_lembaga,
+                jumlah_penerima,
+                latitude,
+                longitude
+              )
+            )
+          ''')
+          .eq('tanggal_jadwal', todayDate)
+          .order(
+            'skor_prioritas',
+            ascending: false,
+          ); // Urutkan berdasarkan skor yg sudah disimpan
+
+      final List<dynamic> dataDB = response as List<dynamic>;
+
+      // 3. Mapping Data (Agar formatnya SAMA PERSIS dengan hasil generateSchedule)
+      // Kita harus 'meratakan' (flatten) struktur JSON yang bersarang
+      return dataDB.map((item) {
+        final menu = item['daftar_menu'];
+        final sekolah = menu['lembaga'];
+
+        return {
+          // Data Utama
+          'id_menu': item['id_menu'], // ID untuk update status nanti
+          'nama': sekolah['nama_lembaga'],
+          'menu': menu['nama_makanan'],
+          'jenis': menu['jenis_makanan'],
+          'jumlah': sekolah['jumlah_penerima'] ?? 0,
+          'status': item['status'], // pending/selesai
+          // Data Jarak & Skor (Ambil langsung dari DB, gak usah hitung lagi)
+          'jarak_meter': item['jarak_meter'],
+          'jarak_text': "${(item['jarak_meter'] / 1000).toStringAsFixed(1)} km",
+          'skor': item['skor_prioritas'],
+
+          // Koordinat Tujuan (Sekolah)
+          'lat_tujuan': (sekolah['latitude'] as num?)?.toDouble() ?? 00,
+          'long_tujuan': (sekolah['longitude'] as num?)?.toDouble() ?? 00,
+
+          // Koordinat Asal (Dapur)
+          'lat_dapur': latDapur,
+          'long_dapur': longDapur,
+        };
+      }).toList();
+    } catch (e) {
+      debugPrint("Gagal mengambil jadwal dari DB: $e");
+      return []; // Return kosong jika error/belum ada data
+    }
+  }
+
+  // --- FUNGSI BARU: SIMPAN JADWAL KE DB ---
+  Future<void> simpanJadwalKeDB(
+    List<Map<String, dynamic>> hasilGenerate,
+  ) async {
+    try {
+      final String todayDate = DateTime.now().toIso8601String().substring(
+        0,
+        10,
+      ); // Format YYYY-MM-DD
+
+      // 1. Cek dulu apakah jadwal hari ini sudah ada?
+      final cekData = await _supabase
+          .from('jadwal_pengiriman')
+          .select('id')
+          .eq('tanggal_jadwal', todayDate)
+          .limit(1);
+
+      if ((cekData as List).isNotEmpty) {
+        // Jika sudah ada, kita bisa pilih: Hapus dulu lalu replace, atau Skip.
+        // Di sini kita pilih hapus yang lama (Reset) agar update terbaru masuk
+        await _supabase
+            .from('jadwal_pengiriman')
+            .delete()
+            .eq('tanggal_jadwal', todayDate);
+      }
+
+      // 2. Siapkan data untuk Bulk Insert
+      // Kita mapping dari hasil generate ke kolom database
+      List<Map<String, dynamic>> dataInsert = hasilGenerate.map((item) {
+        return {
+          'id_menu': item['id_menu'],
+          'skor_prioritas': item['skor'],
+          'jarak_meter': item['jarak_meter'],
+          'status': 'pending',
+          'tanggal_jadwal': todayDate,
+        };
+      }).toList();
+
+      // 3. Eksekusi Insert
+      if (dataInsert.isNotEmpty) {
+        await _supabase.from('jadwal_pengiriman').insert(dataInsert);
+        debugPrint(
+          "Berhasil menyimpan ${dataInsert.length} jadwal ke database.",
+        );
+      }
+    } catch (e) {
+      debugPrint("Gagal menyimpan jadwal: $e");
+      rethrow;
+    }
+  }
+
+  Future<void> tandaiSelesai(int idMenu) async {
+    await _supabase
+        .from('jadwal_pengiriman')
+        .update({
+          'status': 'selesai',
+          // 'waktu_sampai': DateTime.now().toIso8601String(), // jika ada kolom ini
+        })
+        .eq('id_menu', idMenu);
   }
 }

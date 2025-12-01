@@ -31,28 +31,50 @@ class _JadwalPengirimanScreenState extends State<JadwalPengirimanScreen> {
     "SD",
   ];
 
-  @override
-  void initState() {
-    super.initState();
-    _loadJadwal();
-  }
+  // --- LOGIKA CEK DATA ATAU GENERATE BARU ---
+  Future<void> _checkAndLoadJadwal() async {
+    setState(() => _isLoading = true);
 
-  // --- 2. PERBAIKAN FUNGSI LOAD DATA ---
-  Future<void> _loadJadwal() async {
     try {
-      // Panggil fungsi generateSchedule() dari instance _service
-      final data = await _service.generateSchedule();
+      // LANGKAH 1: Cek dulu di Database
+      List<Map<String, dynamic>> data = await _service.getJadwalHarian();
 
-      if (mounted) {
-        setState(() {
-          // A. Simpan data ke variabel utama
-          _allJadwalList = data;
+      if (data.isNotEmpty) {
+        // KASUS A: Data SUDAH ADA di DB
+        debugPrint("Menggunakan data dari Database (Cache)");
 
-          // B. Isi filtered list dengan semua data dulu
-          _filteredList = data;
+        if (mounted) {
+          setState(() {
+            _allJadwalList = data;
+            _filteredList = data;
+            _isLoading = false;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Memuat jadwal tersimpan hari ini.")),
+          );
+        }
+      } else {
+        // KASUS B: Data BELUM ADA (Kosong) -> Generate Baru
+        debugPrint("Data DB kosong. Melakukan Generate Baru...");
 
-          _isLoading = false;
-        });
+        // 1. Hitung via OSRM & Algoritma
+        final newData = await _service.generateSchedule();
+
+        // 2. Simpan hasilnya ke DB (supaya nanti pas dibuka lagi gak perlu hitung ulang)
+        await _service.simpanJadwalKeDB(newData);
+
+        if (mounted) {
+          setState(() {
+            _allJadwalList = newData;
+            _filteredList = newData;
+            _isLoading = false;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("Jadwal baru berhasil dibuat & disimpan!"),
+            ),
+          );
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -62,6 +84,12 @@ class _JadwalPengirimanScreenState extends State<JadwalPengirimanScreen> {
         });
       }
     }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _checkAndLoadJadwal(); // Panggil fungsi baru ini
   }
 
   // --- 3. FUNGSI FILTERING ---
@@ -196,6 +224,9 @@ class _JadwalPengirimanScreenState extends State<JadwalPengirimanScreen> {
   }
 
   Widget _jadwalItemCard(Map<String, dynamic> item, int urutan) {
+    // 1. Cek Status Pengiriman
+    bool isSelesai = item['status'] == 'selesai';
+
     return Card(
       color: const Color(0xFF5A0E0E),
       margin: const EdgeInsets.only(bottom: 16),
@@ -205,23 +236,34 @@ class _JadwalPengirimanScreenState extends State<JadwalPengirimanScreen> {
       ),
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        // Nomor Urut
+
+        // --- BAGIAN INI YANG DIUBAH ---
         leading: CircleAvatar(
-          backgroundColor: Colors.orange,
+          // Jika selesai warna HIJAU, jika belum warna ORANGE
+          backgroundColor: isSelesai ? Colors.green : Colors.orange,
           foregroundColor: Colors.white,
-          child: Text(
-            "#$urutan",
-            style: const TextStyle(fontWeight: FontWeight.bold),
-          ),
+          // Jika selesai tampilkan ICON CEKLIS, jika belum tampilkan NOMOR URUT
+          child: isSelesai
+              ? const Icon(Icons.check, color: Colors.white, size: 24)
+              : Text(
+                  "#$urutan",
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
         ),
+        // ------------------------------
+
         // Nama Lembaga
         title: Text(
           item['nama'] ?? 'Tanpa Nama',
-          style: const TextStyle(
+          style: TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.bold,
+            // Opsional: Coret nama jika sudah selesai
+            decoration: isSelesai ? TextDecoration.lineThrough : null,
+            decorationColor: Colors.white54,
           ),
         ),
+
         // Detail Info
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -233,31 +275,70 @@ class _JadwalPengirimanScreenState extends State<JadwalPengirimanScreen> {
             ),
             _infoRow(Icons.groups, "Penerima: ${item['jumlah']} Siswa"),
             _infoRow(Icons.map, "Jarak: ${item['jarak_text']}"),
-            // Tampilkan Skor untuk memastikan sorting benar (bisa dihapus nanti)
-            // Text("Skor: ${item['skor']}", style: TextStyle(color: Colors.grey, fontSize: 10)),
+
+            // Opsional: Tampilkan teks status text juga
+            if (isSelesai)
+              const Padding(
+                padding: EdgeInsets.only(top: 4),
+                child: Text(
+                  "STATUS: SELESAI",
+                  style: TextStyle(
+                    color: Colors.green,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
           ],
         ),
+
         // Tombol Panah
         trailing: GestureDetector(
           onTap: () {
-            // Navigasi ke RuteMapScreen
-            // Kita kirim koordinat tujuan agar map bisa menggambar rute
+            if (isSelesai) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text("Pengiriman ini sudah selesai!"),
+                  backgroundColor: Colors.green,
+                  duration: Duration(seconds: 1),
+                ),
+              );
+              return;
+            }
+            // Validasi koordinat
+            if (item['lat_tujuan'] == null ||
+                item['long_tujuan'] == null ||
+                item['lat_dapur'] == null ||
+                item['long_dapur'] == null) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text("Data lokasi tidak lengkap")),
+              );
+              return;
+            }
+
             Navigator.push(
               context,
               MaterialPageRoute(
                 builder: (context) => RutePerkiraanWaktuScreen(
-                  jam: "Estimasi...", // Bisa dihitung nanti
+                  jam: "Estimasi...",
                   sekolah: item['nama'],
-                  // Tambahkan parameter ini di RutePerkiraanWaktuScreen Anda:
-                  // latTujuan: item['lat_tujuan'],
-                  // longTujuan: item['long_tujuan'],
+                  // Tambahkan Default Value 0 agar aman dari null
+                  idMenu: item['id_menu'] ?? 0,
+                  latAsal: item['lat_dapur'],
+                  longAsal: item['long_dapur'],
+                  latTujuan: item['lat_tujuan'],
+                  longTujuan: item['long_tujuan'],
                 ),
               ),
-            );
+            ).then((_) {
+              // Reload data ketika kembali dari peta (biar statusnya update di list)
+              _checkAndLoadJadwal();
+            });
           },
-          child: const Icon(
+          child: Icon(
             Icons.arrow_forward_ios,
-            color: Colors.white54,
+            // Jika selesai, warnanya kita buat hijau juga biar senada
+            color: isSelesai ? Colors.green : Colors.white54,
             size: 16,
           ),
         ),

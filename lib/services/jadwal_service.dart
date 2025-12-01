@@ -1,114 +1,134 @@
 import 'dart:convert';
-
+import 'package:flutter/material.dart'; // Untuk debugPrint
 import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class JadwalService {
-  final _supabase = Supabase.instance.client;
+  final SupabaseClient _supabase = Supabase.instance.client;
 
+  // --- FUNGSI UTAMA: GENERATE JADWAL DARI DAPUR KE SEKOLAH ---
   Future<List<Map<String, dynamic>>> generateSchedule() async {
-    final user = _supabase.auth.currentUser;
-    if (user == null) throw "User belum login";
+    try {
+      // 1. AMBIL LOKASI DAPUR
+      final dataDapur = await _supabase
+          .from('lembaga')
+          .select('nama_lembaga, latitude, longitude')
+          .eq('jenis_lembaga', 'Dapur SPPG')
+          .maybeSingle();
 
-    // 1. AMBIL LOKASI SAYA (PENGIRIM)
-    final myProfile = await _supabase
-        .from('profiles')
-        .select('latitude, longitude')
-        .eq('id', user.id)
-        .single();
+      if (dataDapur == null) throw "Dapur SPPG tidak ditemukan.";
 
-    if (myProfile['latitude'] == null) {
-      throw "Lokasi Anda belum diatur. Harap set lokasi di Edit Profil.";
-    }
-    LatLng myLocation = LatLng(myProfile['latitude'], myProfile['longitude']);
-
-    // 2. AMBIL MENU HARI INI
-    String hariIni = _getNamaHari();
-    String jenisMakanan = 'kering';
-    String namaMenu = 'Tidak ada menu';
-
-    final dataMenu = await _supabase
-        .from('daftar_menu')
-        .select('nama_makanan, jenis_makanan')
-        .ilike('hari_tersedia', '%$hariIni%')
-        .maybeSingle();
-
-    if (dataMenu != null) {
-      jenisMakanan = dataMenu['jenis_makanan'] ?? 'kering';
-      namaMenu = dataMenu['nama_makanan'];
-    }
-
-    // 3. AMBIL DATA PENERIMA
-    final dataPenerima = await _supabase
-        .from('profiles')
-        .select(
-          'username, lembaga, jumlah_penerima, latitude, longitude, user_roles!inner(roles!inner(nama_role))',
-        )
-        .eq('user_roles.roles.nama_role', 'penanggungjawab_mbg')
-        .not('latitude', 'is', null);
-
-    // 4. PROSES HITUNG SKOR & JARAK
-    List<Map<String, dynamic>> hasilJadwal = [];
-
-    for (var item in dataPenerima) {
-      double lat = item['latitude'];
-      double long = item['longitude'];
-
-      // A. Hitung Jarak Jalan Raya (OSRM)
-      double jarakMeter = await _getRoadDistance(
-        myLocation.latitude,
-        myLocation.longitude,
-        lat,
-        long,
+      LatLng lokasiDapur = LatLng(
+        (dataDapur['latitude'] as num).toDouble(),
+        (dataDapur['longitude'] as num).toDouble(),
       );
 
-      // Jika OSRM gagal (return 99999), fallback ke Garis Lurus
-      if (jarakMeter > 99999000) {
-        final Distance distance = const Distance();
-        jarakMeter = distance.as(
-          LengthUnit.Meter,
-          myLocation,
-          LatLng(lat, long),
-        );
+      // 2. TENTUKAN HARI INI
+      String hariIni = _getNamaHari(); // Misal: "Senin"
+
+      // ---------------------------------------------------------
+      // PERBAIKAN UTAMA ADA DI SINI:
+      // Kita ambil Data MENU, lalu kita minta Supabase menyertakan data LEMBAGA-nya.
+      // ---------------------------------------------------------
+      final response = await _supabase
+          .from('daftar_menu')
+          // 'lembaga:id_penerima(*)' artinya: Join tabel lembaga via foreign key id_penerima
+          .select('*, lembaga:id_penerima(*)')
+          .ilike('hari_tersedia', '%$hariIni%');
+
+      final List<dynamic> dataMenuHariIni = response as List<dynamic>;
+
+      if (dataMenuHariIni.isEmpty) {
+        // Jangan throw error, return kosong saja agar UI tidak crash
+        return [];
       }
 
-      String jarakKm = (jarakMeter / 1000).toStringAsFixed(1);
-      int jumlah = item['jumlah_penerima'] ?? 0;
+      // 3. LOOPING BERDASARKAN MENU (Bukan Sekolah)
+      List<Map<String, dynamic>> hasilJadwal = [];
 
-      // B. Hitung Skor Prioritas
-      double skor = 0;
+      for (var itemMenu in dataMenuHariIni) {
+        // Ambil data lembaga dari relasi
+        final dataSekolah = itemMenu['lembaga'];
 
-      // Faktor 1: Jenis Makanan
-      if (jenisMakanan.toLowerCase() == 'sayur') skor += 600;
-      if (jenisMakanan.toLowerCase() == 'buah') skor += 500;
-      if (jenisMakanan.toLowerCase() == 'protein hewani') skor += 400;
-      if (jenisMakanan.toLowerCase() == 'susu') skor += 300;
-      if (jenisMakanan.toLowerCase() == 'protein nabati') skor += 200;
-      if (jenisMakanan.toLowerCase() == 'sumber kabohidrat') skor += 100;
-      if (jenisMakanan.toLowerCase() == 'sumber lemak') skor += 0;
+        // Skip jika menu ini tidak punya data sekolah (relasi null) atau koordinat null
+        if (dataSekolah == null || dataSekolah['latitude'] == null) continue;
 
-      // Faktor 2: Jarak (Semakin dekat skor makin tinggi)
-      // 100 - jarak(km). Jika jarak 5km = 95 poin.
-      skor += (100 - (jarakMeter / 1000));
+        double latTujuan = (dataSekolah['latitude'] as num).toDouble();
+        double longTujuan = (dataSekolah['longitude'] as num).toDouble();
+        String namaSekolah = dataSekolah['nama_lembaga'] ?? 'Tanpa Nama';
 
-      // Faktor 3: Jumlah Penerima
-      skor += (jumlah / 10);
+        // Ambil Menu Spesifik untuk sekolah ini
+        String namaMakanan = itemMenu['nama_makanan'] ?? '-';
+        String jenisMakanan = itemMenu['jenis_makanan'] ?? 'Umum';
 
-      hasilJadwal.add({
-        'nama': item['lembaga'] ?? item['full_name'],
-        'menu': namaMenu,
-        'jenis': jenisMakanan,
-        'jumlah': jumlah,
-        'jarak_text': "$jarakKm km",
-        'skor': skor,
-      });
+        // 4. HITUNG JARAK (Dapur -> Sekolah Ini)
+        double jarakMeter = await _getRoadDistance(
+          lokasiDapur.latitude,
+          lokasiDapur.longitude,
+          latTujuan,
+          longTujuan,
+        );
+
+        // Fallback jika OSRM gagal/limit
+        if (jarakMeter > 99999000) {
+          final Distance distance = const Distance();
+          jarakMeter = distance.as(
+            LengthUnit.Meter,
+            lokasiDapur,
+            LatLng(latTujuan, longTujuan),
+          );
+        }
+
+        // 5. HITUNG SKOR (Logika Anda)
+        double skor = 0;
+        String jenisLower = jenisMakanan.toLowerCase();
+
+        // Skor Jenis Makanan
+        if (jenisLower.contains('sayur'))
+          skor += 500;
+        else if (jenisLower.contains('buah'))
+          skor += 400;
+        else if (jenisLower.contains('protein hewani'))
+          skor += 300;
+        else if (jenisLower.contains('susu'))
+          skor += 200;
+        else if (jenisLower.contains('protein nabati'))
+          skor += 100;
+        else if (jenisLower.contains('sumber karbohidrat'))
+          skor += 50;
+        else if (jenisLower.contains('sumber lemak'))
+          skor += 25;
+        else
+          skor += 0;
+
+        // Skor Jarak (Prioritas dekat)
+        skor += (100 - (jarakMeter / 1000));
+
+        // Skor Jumlah Siswa
+        int jumlahSiswa = dataSekolah['jumlah_penerima'] ?? 0;
+        skor += (jumlahSiswa / 10);
+
+        hasilJadwal.add({
+          'nama': namaSekolah, // Nama Sekolah
+          'menu': namaMakanan, // Menu KHUSUS sekolah ini (Bukan 'test10' semua)
+          'jenis': jenisMakanan,
+          'jumlah': jumlahSiswa,
+          'jarak_text': "${(jarakMeter / 1000).toStringAsFixed(1)} km",
+          'skor': skor,
+          'lat_tujuan': latTujuan,
+          'long_tujuan': longTujuan,
+        });
+      }
+
+      // 6. SORTING
+      hasilJadwal.sort((a, b) => b['skor'].compareTo(a['skor']));
+
+      return hasilJadwal;
+    } catch (e) {
+      print("Error generateSchedule: $e");
+      rethrow;
     }
-
-    // 5. SORTING (Skor Tertinggi di Atas)
-    hasilJadwal.sort((a, b) => b['skor'].compareTo(a['skor']));
-
-    return hasilJadwal;
   }
 
   // --- HELPER: NAMA HARI ---

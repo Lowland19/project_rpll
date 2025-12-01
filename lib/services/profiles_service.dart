@@ -184,4 +184,48 @@ class ProfileService extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+  // --- 1. FUNGSI AMBIL DATA LEMBAGA ---
+  Future<Map<String, dynamic>?> fetchLembagaData() async {
+    try {
+      final userId = _supabase.auth.currentUser?.id;
+      if (userId == null) return null;
+
+      // Cari lembaga yang 'id_pengguna_terkait'-nya sama dengan user login
+      final response = await _supabase
+          .from('lembaga')
+          .select()
+          .eq('id_pengguna_terkait', userId)
+          .maybeSingle();
+
+      return response;
+    } catch (e) {
+      debugPrint("Gagal ambil data lembaga: $e");
+      return null;
+    }
+  }
+
+  // --- 2. FUNGSI UPDATE DATA LEMBAGA (Saat tombol Simpan ditekan) ---
+  Future<void> updateLembagaData({
+    required String namaLembaga,
+    required String alamat,
+    required int jumlahPenerima,
+    double? lat,
+    double? long,
+  }) async {
+    final userId = _supabase.auth.currentUser?.id;
+    if (userId == null) return;
+
+    // Update tabel lembaga berdasarkan user login
+    await _supabase
+        .from('lembaga')
+        .update({
+          'nama_lembaga': namaLembaga,
+          'alamat': alamat,
+          'jumlah_penerima': jumlahPenerima,
+          'latitude': lat,
+          'longitude': long,
+        })
+        .eq('id_pengguna_terkait', userId);
+  }
 }

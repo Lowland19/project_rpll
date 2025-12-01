@@ -82,6 +82,21 @@ class _RutePerkiraanWaktuScreenState extends State<RutePerkiraanWaktuScreen> {
             _posisiSupir = LatLng(position.latitude, position.longitude);
           });
 
+          print("GPS Bergerak: ${position.latitude}, ${position.longitude}");
+
+          // --- TAMBAHAN BARU: UPLOAD KE SUPABASE ---
+          // Kita bungkus try-catch agar kalau sinyal jelek, aplikasi gak crash
+          try {
+            await _jadwalService.updateLokasiRealtime(
+              widget.idMenu,
+              position.latitude,
+              position.longitude,
+            );
+          } catch (e) {
+            // Silent error (biarkan saja kalau gagal upload sesekali)
+            debugPrint("Gagal upload lokasi: $e");
+          }
+
           // 2. Cek apakah sudah sampai sebelumnya? Jika sudah, skip logika ini.
           if (_hasArrived) return;
 
@@ -94,7 +109,7 @@ class _RutePerkiraanWaktuScreenState extends State<RutePerkiraanWaktuScreen> {
           );
 
           // 4. Cek Threshold (Jika kurang dari 150 meter dianggap sampai)
-          if (jarakMeter <= 50) {
+          if (jarakMeter <= 100) {
             // Kunci flag dulu biar gak kepanggil berkali-kali
             _hasArrived = true;
 

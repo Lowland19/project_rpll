@@ -80,4 +80,15 @@ class AuthProvider extends ChangeNotifier {
       throw Exception("Gagal mengirim reset password: $e");
     }
   }
+  Future<void> changePassword(String newPassword) async {
+    final client = Supabase.instance.client;
+
+    final response = await client.auth.updateUser(
+      UserAttributes(password: newPassword),
+    );
+
+    if (response.user == null) {
+      throw Exception("Gagal mengubah password");
+    }
+  }
 }

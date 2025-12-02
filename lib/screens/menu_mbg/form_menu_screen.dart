@@ -13,18 +13,60 @@ class FormMenuScreen extends StatefulWidget {
 }
 
 class _FormMenuScreenState extends State<FormMenuScreen> {
-  final TextEditingController namaController = TextEditingController();
-
-  // Variabel ID untuk disimpan ke Database
   int? selectedPenerimaId;
-
-  String? jenisMakanan;
   String? hariTersedia;
+
   File? selectedImage;
   Uint8List? webImage;
 
   List<Map<String, dynamic>> lembagaList = [];
   bool isLoadingLembaga = true;
+
+  String persenGizi = "-";
+  String statusGizi = "-";
+
+  /// MULTI SELECT
+  List<String> selectedJenis = [];
+  Map<String, List<String>> selectedDetail = {};
+
+  /// MENU RELASI
+  Map<String, List<String>> subMenuOptions = {
+    "Sumber karbohidrat": ["Nasi Goreng", "Nasi Putih", "Bubur Ayam", "Roti", "Kentang"],
+    "Protein hewani": ["Ayam Goreng", "Telur", "Ikan Bandeng", "Daging Sapi"],
+    "Protein nabati": ["Tahu", "Tempe", "Kacang Merah", "Kedelai"],
+    "Sayur": ["Tumis Kangkung", "Sayur Sop", "Sayur Bayam"],
+    "Buah": ["Pisang", "Apel", "Pepaya", "Semangka"],
+    "Sumber lemak": ["Mentega", "Keju", "Minyak Sayur"],
+    "Susu": ["Susu UHT", "Susu Bubuk"],
+  };
+
+  /// TABEL PERHITUNGAN GIZI
+  final Map<String, Map<String, double>> giziTable = {
+    "TK/PAUD/RA": {"Karbohidrat": 20.9, "Protein": 25.0, "Lemak": 23.7},
+    "Siswa SD": {"Karbohidrat": 21.6, "Protein": 28.1, "Lemak": 27.5},
+    "Siswa SMP": {"Karbohidrat": 30.8, "Protein": 34.8, "Lemak": 30.7},
+    "Siswa SMA": {"Karbohidrat": 30.4, "Protein": 36.4, "Lemak": 31.0},
+  };
+
+  final Map<String, String> kategoriPenerima = {
+    "PAUD Darul Falah": "TK/PAUD/RA",
+    "Kober Qurrotu'ain Al Istiqomah": "TK/PAUD/RA",
+    "PAUD KENANGA 12": "TK/PAUD/RA",
+    "PAUD Melati 10": "TK/PAUD/RA",
+    "PAUD Mawar Putih": "TK/PAUD/RA",
+    "RA DARUL IKHLAS": "TK/PAUD/RA",
+    "RA Darul Hufadz": "TK/PAUD/RA",
+    "RA Nurul Huda": "TK/PAUD/RA",
+    "Kober Nurul Huda Al Khudlory": "TK/PAUD/RA",
+    "TK DAAIMUL HIDAYAH AL-QURANI": "TK/PAUD/RA",
+    "TK HARAPAN MULYA": "TK/PAUD/RA",
+    "TK PAMEKAR BUDI": "TK/PAUD/RA",
+    "SDN Pasirkaliki Mandiri 1": "Siswa SD",
+    "SDN Pasir Kaliki Mandiri 2": "Siswa SD",
+    "SMPN 12": "Siswa SMP",
+    "SMAN 3": "Siswa SMA",
+    "SLB B PRIMA BHAKTI": "Siswa SD",
+  };
 
   @override
   void initState() {
@@ -33,26 +75,21 @@ class _FormMenuScreenState extends State<FormMenuScreen> {
   }
 
   Future<void> fetchLembaga() async {
-    try {
-      final response = await Supabase.instance.client
-          .from('lembaga')
-          .select('id, nama_lembaga')
-          .order('nama_lembaga', ascending: true); // Urutkan A-Z biar rapi
+    final response = await Supabase.instance.client
+        .from('lembaga')
+        .select('id, nama_lembaga')
+        .order('nama_lembaga');
 
-      setState(() {
-        lembagaList = List<Map<String, dynamic>>.from(response);
-        isLoadingLembaga = false;
-      });
-    } catch (e) {
-      print("Error fetching lembaga: $e");
-      setState(() => isLoadingLembaga = false);
-    }
+    setState(() {
+      lembagaList = List<Map<String, dynamic>>.from(response);
+      isLoadingLembaga = false;
+    });
   }
 
-  // ... (Fungsi pickImage dan uploadImage SAMA SEPERTI SEBELUMNYA) ...
   Future<void> pickImage() async {
     final picker = ImagePicker();
     final picked = await picker.pickImage(source: ImageSource.gallery);
+
     if (picked != null) {
       if (kIsWeb) {
         webImage = await picked.readAsBytes();
@@ -65,56 +102,172 @@ class _FormMenuScreenState extends State<FormMenuScreen> {
 
   Future<String?> uploadImage() async {
     if (selectedImage == null && webImage == null) return null;
+
     final fileName = "menu_${DateTime.now().millisecondsSinceEpoch}.jpg";
     final storage = Supabase.instance.client.storage.from("menu_foto");
+
     try {
       if (kIsWeb) {
-        await storage.uploadBinary(
-          fileName,
-          webImage!,
-          fileOptions: const FileOptions(contentType: "image/jpeg"),
-        );
+        await storage.uploadBinary(fileName, webImage!,
+            fileOptions: const FileOptions(contentType: "image/jpeg"));
       } else {
-        await storage.upload(
-          fileName,
-          selectedImage!,
-          fileOptions: const FileOptions(contentType: "image/jpeg"),
-        );
+        await storage.upload(fileName, selectedImage!,
+            fileOptions: const FileOptions(contentType: "image/jpeg"));
       }
       return storage.getPublicUrl(fileName);
-    } catch (e) {
+    } catch (_) {
       return null;
     }
   }
-  // ... (End Fungsi Image) ...
+
+  /// 🔥 HITUNG GIZI
+  void updatePersenGizi() {
+    if (selectedPenerimaId == null || selectedJenis.isEmpty) {
+      setState(() {
+        persenGizi = "-";
+        statusGizi = "-";
+      });
+      return;
+    }
+
+    final penerima = lembagaList.firstWhere((e) => e["id"] == selectedPenerimaId);
+    final kategori = kategoriPenerima[penerima["nama_lembaga"]] ?? "Siswa SD";
+
+    List<double> totalNilai = [];
+
+    for (var kategoriMakanan in selectedJenis) {
+      String gizi = (kategoriMakanan == "Sumber karbohidrat" || kategoriMakanan == "Sayur" || kategoriMakanan == "Buah")
+          ? "Karbohidrat"
+          : (kategoriMakanan == "Sumber lemak")
+          ? "Lemak"
+          : "Protein";
+
+      final nilai = giziTable[kategori]?[gizi];
+      if (nilai != null) totalNilai.add(nilai);
+    }
+
+    double total = totalNilai.fold(0, (a, b) => a + b);
+
+    setState(() {
+      persenGizi = "${total.toStringAsFixed(1)}%";
+      statusGizi = total >= 100 ? "✔ Tercukupi" : "❌ Belum Tercukupi";
+    });
+  }
 
   Future<void> saveMenu() async {
-    if (selectedPenerimaId == null) {
+    if (selectedJenis.isEmpty || selectedDetail.isEmpty || selectedPenerimaId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Harap cari dan pilih penerima manfaat")),
+        const SnackBar(content: Text("Harap lengkapi semua data!")),
       );
       return;
     }
 
-    try {
-      final imgUrl = await uploadImage();
+    final imgUrl = await uploadImage();
 
-      await Supabase.instance.client.from("daftar_menu").insert({
-        "nama_makanan": namaController.text,
-        "jenis_makanan": jenisMakanan,
-        "hari_tersedia": hariTersedia,
-        "id_penerima": selectedPenerimaId, // Tetap simpan ID-nya
-        "foto_url": imgUrl,
-      });
+    await Supabase.instance.client.from("daftar_menu").insert({
+      "jenis_makanan": selectedJenis.join(", "),
+      "detail_makanan": selectedDetail.values.expand((e) => e).join(", "),
+      "hari_tersedia": hariTersedia,
+      "id_penerima": selectedPenerimaId,
+      "persen_gizi": persenGizi,
+      "status_gizi": statusGizi,
+      "foto_url": imgUrl,
+    });
 
-      if (mounted) Navigator.pop(context, true);
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text("Gagal: $e")));
-      }
-    }
+    if (mounted) Navigator.pop(context, true);
+  }
+
+  Widget buildMultiSelectJenis() {
+    return GestureDetector(
+      onTap: () {
+        showModalBottomSheet(
+          context: context,
+          backgroundColor: Colors.brown.shade800,
+          builder: (_) => StatefulBuilder(
+            builder: (context, setStateSheet) {
+              return ListView(
+                children: subMenuOptions.keys.map((item) {
+                  return CheckboxListTile(
+                    title: Text(item, style: const TextStyle(color: Colors.white)),
+                    value: selectedJenis.contains(item),
+                    onChanged: (v) {
+                      setStateSheet(() {
+                        if (v == true) {
+                          selectedJenis.add(item);
+                          selectedDetail[item] = [];
+                        } else {
+                          selectedJenis.remove(item);
+                          selectedDetail.remove(item);
+                        }
+                      });
+                      updatePersenGizi();
+                      setState(() {});
+                    },
+                  );
+                }).toList(),
+              );
+            },
+          ),
+        );
+      },
+      child: boxField(selectedJenis.isEmpty ? "Pilih Jenis Makanan" : selectedJenis.join(", ")),
+    );
+  }
+
+  Widget buildMultiSelectDetail() {
+    if (selectedJenis.isEmpty) return const SizedBox();
+
+    return Column(
+      children: selectedJenis.map((kategori) {
+        return GestureDetector(
+          onTap: () {
+            showModalBottomSheet(
+              context: context,
+              backgroundColor: Colors.brown.shade800,
+              builder: (_) => StatefulBuilder(
+                builder: (context, setStateSheet) {
+                  return ListView(
+                    children: subMenuOptions[kategori]!.map((item) {
+                      return CheckboxListTile(
+                        title: Text(item, style: const TextStyle(color: Colors.white)),
+                        value: selectedDetail[kategori]!.contains(item),
+                        onChanged: (v) {
+                          setStateSheet(() {
+                            if (v == true) {
+                              selectedDetail[kategori]!.add(item);
+                            } else {
+                              selectedDetail[kategori]!.remove(item);
+                            }
+                          });
+                          setState(() {});
+                        },
+                      );
+                    }).toList(),
+                  );
+                },
+              ),
+            );
+          },
+          child: boxField(
+              selectedDetail[kategori]!.isEmpty
+                  ? "Pilih menu untuk $kategori"
+                  : "$kategori: ${selectedDetail[kategori]!.join(", ")}"
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  Widget boxField(String text) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.only(bottom: 10),
+      decoration: BoxDecoration(
+        color: const Color(0xFF5A0E0E),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Text(text, style: const TextStyle(color: Colors.white)),
+    );
   }
 
   @override
@@ -124,12 +277,10 @@ class _FormMenuScreenState extends State<FormMenuScreen> {
       appBar: AppBar(
         backgroundColor: const Color(0xFF5A0E0E),
         title: const Text("Tambah Menu", style: TextStyle(color: Colors.white)),
-        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          // Foto Profile
           Center(
             child: GestureDetector(
               onTap: pickImage,
@@ -138,130 +289,57 @@ class _FormMenuScreenState extends State<FormMenuScreen> {
                 backgroundColor: Colors.white10,
                 backgroundImage: kIsWeb
                     ? (webImage != null ? MemoryImage(webImage!) : null)
-                    : (selectedImage != null
-                          ? FileImage(selectedImage!)
-                          : null),
+                    : (selectedImage != null ? FileImage(selectedImage!) : null),
                 child: (webImage == null && selectedImage == null)
-                    ? const Icon(
-                        Icons.camera_alt,
-                        size: 32,
-                        color: Colors.white,
-                      )
+                    ? const Icon(Icons.camera_alt, size: 32, color: Colors.white)
                     : null,
               ),
             ),
           ),
-          const SizedBox(height: 16),
 
-          TextField(
-            controller: namaController,
-            style: const TextStyle(color: Colors.white),
-            decoration: inputStyle("Nama Makanan"),
-          ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
 
-          DropdownButtonFormField(
-            value: jenisMakanan,
-            dropdownColor: const Color(0xFF5A0E0E),
-            style: const TextStyle(color: Colors.white),
-            decoration: inputStyle("Jenis Makanan"),
-            onChanged: (v) => setState(() => jenisMakanan = v),
-            items: [
-              'Sumber karbohidrat',
-              'Protein hewani',
-              'Protein nabati',
-              'Sayur',
-              'Buah',
-              'Sumber lemak',
-              'Susu',
-            ].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
-          ),
-          const SizedBox(height: 16),
+          buildMultiSelectJenis(),
+          buildMultiSelectDetail(),
 
           DropdownButtonFormField(
             value: hariTersedia,
+            decoration: inputStyle("Hari Tersedia"),
             dropdownColor: const Color(0xFF5A0E0E),
             style: const TextStyle(color: Colors.white),
-            decoration: inputStyle("Hari Tersedia"),
             onChanged: (v) => setState(() => hariTersedia = v),
-            items: [
-              'Senin',
-              'Selasa',
-              'Rabu',
-              'Kamis',
-              'Jumat',
-            ].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+            items: ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat']
+                .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+                .toList(),
           ),
-          const SizedBox(height: 16),
 
-          // ==========================================
-          // FITUR PENCARIAN PENERIMA (SEARCHABLE)
-          // ==========================================
+          const SizedBox(height: 20),
+
           isLoadingLembaga
-              ? const Center(child: CircularProgressIndicator())
-              : LayoutBuilder(
-                  builder: (context, constraints) {
-                    return DropdownMenu<int>(
-                      width: constraints.maxWidth, // Agar lebar full
-                      enableFilter: true, // AKTIFKAN FITUR CARI
-                      requestFocusOnTap: true, // Keyboard muncul saat diklik
-                      leadingIcon: const Icon(
-                        Icons.search,
-                        color: Colors.white,
-                      ),
-                      label: const Text(
-                        "Cari Penerima Manfaat",
-                        style: TextStyle(color: Colors.white),
-                      ),
+              ? const CircularProgressIndicator()
+              : DropdownMenu<int>(
+            label: const Text("Pilih Penerima"),
+            enableFilter: true,
+            requestFocusOnTap: true,
+            onSelected: (id) {
+              selectedPenerimaId = id;
+              updatePersenGizi();
+            },
+            dropdownMenuEntries: lembagaList.map((item) {
+              return DropdownMenuEntry<int>(value: item['id'], label: item['nama_lembaga']);
+            }).toList(),
+          ),
 
-                      // Style Input
-                      textStyle: const TextStyle(color: Colors.white),
-                      inputDecorationTheme: InputDecorationTheme(
-                        filled: true,
-                        fillColor: const Color(0xFF5A0E0E),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        labelStyle: const TextStyle(color: Colors.white70),
-                      ),
+          const SizedBox(height: 20),
 
-                      // Style Menu Dropdown
-                      menuStyle: MenuStyle(
-                        backgroundColor: MaterialStateProperty.all(
-                          const Color(0xFF5A0E0E),
-                        ),
-                      ),
+          const Text("Persentase Gizi Total:", style: TextStyle(color: Colors.white)),
+          Text(persenGizi, style: const TextStyle(fontSize: 22, color: Colors.yellow, fontWeight: FontWeight.bold)),
+          Text(statusGizi, style: const TextStyle(fontSize: 18, color: Colors.white)),
 
-                      // Saat user memilih salah satu
-                      onSelected: (int? id) {
-                        setState(() {
-                          selectedPenerimaId = id;
-                        });
-                      },
+          const SizedBox(height: 30),
 
-                      // Konversi Data List ke Dropdown Entry
-                      dropdownMenuEntries: lembagaList.map((item) {
-                        return DropdownMenuEntry<int>(
-                          value: item['id'], // Nilai dibalik layar (ID)
-                          label: item['nama_lembaga'], // Yang terlihat (Nama)
-                          style: ButtonStyle(
-                            foregroundColor: MaterialStateProperty.all(
-                              Colors.white,
-                            ),
-                          ),
-                        );
-                      }).toList(),
-                    );
-                  },
-                ),
-
-          // ==========================================
-          const SizedBox(height: 24),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              padding: const EdgeInsets.all(14),
-            ),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, padding: const EdgeInsets.all(14)),
             onPressed: saveMenu,
             child: const Text("Simpan", style: TextStyle(color: Colors.white)),
           ),

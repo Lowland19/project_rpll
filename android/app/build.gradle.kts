@@ -6,37 +6,53 @@ plugins {
 }
 
 android {
-    namespace = "com.example.project_rpll"
+    namespace = "com.example.project_rpll" // Sesuaikan ID aplikasi kamu
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
         isCoreLibraryDesugaringEnabled = true
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
     }
 
     kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_11.toString()
+        jvmTarget = "1.8"
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "com.example.project_rpll"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
-    }
+
+        // --- MULAI PERBAIKAN ---
+        // Pastikan 'ndk' ada DI DALAM kurung kurawal 'defaultConfig'
+        ndk {
+            // Gunakan .add() agar aman di Kotlin
+            abiFilters.add("armeabi-v7a")
+            abiFilters.add("arm64-v8a")
+            abiFilters.add("x86_64")
+        }
+        // --- SELESAI PERBAIKAN ---
+
+    } // <--- Jangan lupa tutup kurung defaultConfig di sini (SETELAH ndk)
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
+            // Matikan Obfuscation agar TFLite aman
+            isMinifyEnabled = false
+            isShrinkResources = false
+            
             signingConfig = signingConfigs.getByName("debug")
         }
+    }
+
+    // Matikan kompresi
+    aaptOptions {
+        noCompress("tflite")
+        noCompress("lite")
     }
 }
 

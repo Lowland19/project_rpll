@@ -52,12 +52,6 @@ class StartScreen extends StatelessWidget {
                     ),
                   ),
 
-                  Image(
-                    image: const AssetImage('lib/assets/images/logo.png'),
-                    height: 150,
-                    width: 150,
-                  ),
-
                   const SizedBox(height: 96),
 
                   SizedBox(

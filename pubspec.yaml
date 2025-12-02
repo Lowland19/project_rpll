@@ -109,3 +109,4 @@ flutter_launcher_icons:
     - lib/assets/images/
     - assets/model_pisang.tflite
     - assets/labels.txt
+    - assets/icons/logo.png

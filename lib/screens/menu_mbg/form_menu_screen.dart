@@ -148,10 +148,14 @@ class _FormMenuScreenState extends State<FormMenuScreen> {
 
     double total = totalNilai.fold(0, (a, b) => a + b);
 
+// Batasi agar maksimal 100%
+    double cappedTotal = total > 100 ? 100 : total;
+
     setState(() {
-      persenGizi = "${total.toStringAsFixed(1)}%";
-      statusGizi = total >= 100 ? "✔ Tercukupi" : "❌ Belum Tercukupi";
+      persenGizi = "${cappedTotal.toStringAsFixed(1)}%";
+      statusGizi = cappedTotal >= 100 ? "✔ Tercukupi" : "❌ Belum Tercukupi";
     });
+
   }
 
   Future<void> saveMenu() async {

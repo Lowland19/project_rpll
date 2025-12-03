@@ -69,6 +69,11 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+  assets:
+    - assets/images/
+    - assets/model_pisang.tflite
+    - assets/labels.txt
+
 flutter_launcher_icons:
   android: "ic_launcher" # Nama icon untuk Android
   ios: true              # Aktifkan untuk iOS
@@ -105,8 +110,4 @@ flutter_launcher_icons:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
-  assets:
-    - lib/assets/images/
-    - assets/model_pisang.tflite
-    - assets/labels.txt
-    - assets/icons/logo.png
+  

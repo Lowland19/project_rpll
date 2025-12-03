@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:project_rpll/screens/pengaduan/pengaduan_screen.dart';
 import 'package:provider/provider.dart';
 
 // --- IMPORT SCREENS ---
@@ -184,6 +185,15 @@ class _HomeContentState extends State<_HomeContent> {
         'action': () => Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => AdminUserScreen()),
+        ),
+      },
+      {
+        'title': "Kirim Pengaduan (Siswa)",
+        'icon': Icons.book,
+        'allowed_roles': ['admin'],
+        'action': () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => PengaduanScreen()),
         ),
       },
     ];

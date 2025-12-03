@@ -59,8 +59,7 @@ class JadwalService {
             (dataSekolah['longitude'] as num?)?.toDouble() ?? 0.0;
         String namaSekolah = dataSekolah['nama_lembaga'] ?? 'Tanpa Nama';
 
-        // Ambil Menu Spesifik untuk sekolah ini
-        String namaMakanan = itemMenu['nama_makanan'] ?? '-';
+        // Ambil Menu Spesifik untuk sekolah in
         String jenisMakanan = itemMenu['jenis_makanan'] ?? 'Umum';
 
         // 4. HITUNG JARAK (Dapur -> Sekolah Ini)
@@ -114,7 +113,7 @@ class JadwalService {
         if (detailMakananLower.contains('minyak sayur')) skor += 5;
 
         // Skor Jarak (Prioritas dekat)
-        skor += (100 - (jarakMeter / 1000));
+        skor += (100 + (jarakMeter / 1000));
 
         // Skor Jumlah Siswa
         int jumlahSiswa = dataSekolah['jumlah_penerima'] ?? 0;
@@ -122,8 +121,7 @@ class JadwalService {
 
         hasilJadwal.add({
           'id_menu': itemMenu['id'],
-          'nama': namaSekolah, // Nama Sekolah
-          'menu': namaMakanan, // Menu KHUSUS sekolah ini (Bukan 'test10' semua)
+          'nama': namaSekolah, // Nama Sekola
           'jenis': jenisMakanan,
           'jumlah': jumlahSiswa,
           'jarak_meter': jarakMeter,
@@ -216,7 +214,6 @@ class JadwalService {
           .select('''
             *,
             daftar_menu (
-              nama_makanan,
               jenis_makanan,
               lembaga (
                 nama_lembaga,
@@ -226,11 +223,8 @@ class JadwalService {
               )
             )
           ''')
-          .eq('tanggal_jadwal', todayDate)
-          .order(
-            'skor_prioritas',
-            ascending: false,
-          ); // Urutkan berdasarkan skor yg sudah disimpan
+          .eq('tanggal_jadwal', todayDate);
+           // Urutkan berdasarkan skor yg sudah disimpan
 
       final List<dynamic> dataDB = response as List<dynamic>;
 
@@ -244,7 +238,6 @@ class JadwalService {
           // Data Utama
           'id_menu': item['id_menu'], // ID untuk update status nanti
           'nama': sekolah['nama_lembaga'],
-          'menu': menu['nama_makanan'],
           'jenis': menu['jenis_makanan'],
           'jumlah': sekolah['jumlah_penerima'] ?? 0,
           'status': item['status'], // pending/selesai

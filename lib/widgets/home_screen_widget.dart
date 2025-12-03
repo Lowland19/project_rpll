@@ -152,7 +152,7 @@ class _HomeContentState extends State<_HomeContent> {
         ),
       },
       {
-        'title': "Kirim Pengaduan",
+        'title': "Pemeriksaan",
         'icon': Icons.send,
         'allowed_roles': ['penanggungjawab_mbg'],
         'action': () => Navigator.push(

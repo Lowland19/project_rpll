@@ -77,7 +77,7 @@ class _EditMenuScreenState extends State<EditMenuScreen> {
   @override
   void initState() {
     super.initState();
-    namaController = TextEditingController(text: widget.menu['nama_makanan']);
+    namaController = TextEditingController(text: widget.menu['detail_makanan']);
     jenisMakananFromDB();
     hariTersedia = widget.menu['hari_tersedia'];
     fotoUrl = widget.menu['foto_url'];
@@ -187,9 +187,13 @@ class _EditMenuScreenState extends State<EditMenuScreen> {
       if (nilai != null) totalNilai.add(nilai);
     }
     double total = totalNilai.fold(0, (a, b) => a + b);
+
+    // 🔥 BATASI AGAR MAX 100%
+    double cappedTotal = total > 100 ? 100 : total;
+
     setState(() {
-      persenGizi = "${total.toStringAsFixed(1)}%";
-      statusGizi = total >= 100 ? "✔ Tercukupi" : "❌ Belum Tercukupi";
+      persenGizi = "${cappedTotal.toStringAsFixed(1)}%";
+      statusGizi = cappedTotal >= 100 ? "✔ Tercukupi" : "❌ Belum Tercukupi";
     });
   }
 
@@ -202,7 +206,7 @@ class _EditMenuScreenState extends State<EditMenuScreen> {
     try {
       final imgUrl = await uploadImage();
       await Supabase.instance.client.from("daftar_menu").update({
-        "nama_makanan": namaController.text,
+        "detail_makanan": namaController.text,
         "jenis_makanan": selectedJenis.join(", "),
         "detail_makanan": selectedDetail.values.expand((e) => e).join(", "),
         "hari_tersedia": hariTersedia,

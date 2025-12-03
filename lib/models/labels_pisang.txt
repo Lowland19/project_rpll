@@ -1,0 +1,4 @@
+matang
+mentah
+busuk
+print("Jumlah labels: ${labels.length}");

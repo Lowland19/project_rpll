@@ -82,26 +82,36 @@ class JadwalService {
         }
 
         // 5. HITUNG SKOR (Logika Anda)
+        String detailMakanan = itemMenu['detail_makanan'] ?? 'Umum';
         double skor = 0;
-        String jenisLower = jenisMakanan.toLowerCase();
+        String detailMakananLower = detailMakanan.toLowerCase();
 
         // Skor Jenis Makanan
-        if (jenisLower.contains('sayur'))
-          skor += 500;
-        else if (jenisLower.contains('buah'))
-          skor += 400;
-        else if (jenisLower.contains('protein hewani'))
-          skor += 300;
-        else if (jenisLower.contains('susu'))
-          skor += 200;
-        else if (jenisLower.contains('protein nabati'))
-          skor += 100;
-        else if (jenisLower.contains('sumber karbohidrat'))
-          skor += 50;
-        else if (jenisLower.contains('sumber lemak'))
-          skor += 25;
-        else
-          skor += 0;
+        if (detailMakananLower.contains('sayur bayam')) skor += 98;
+        if (detailMakananLower.contains('sayur sop')) skor += 95;
+        if (detailMakananLower.contains('tumis kangkung')) skor += 90;
+        if (detailMakananLower.contains('bubur ayam')) skor += 95;
+        if (detailMakananLower.contains('nasi putih')) skor += 85;
+        if (detailMakananLower.contains('nasi goreng')) skor += 80;
+        if (detailMakananLower.contains('kentang')) skor += 75;
+        if (detailMakananLower.contains('roti')) skor += 40;
+        if (detailMakananLower.contains('tahu')) skor += 85;
+        if (detailMakananLower.contains('tempe')) skor += 70;
+        if (detailMakananLower.contains('kacang merah')) skor += 65;
+        if (detailMakananLower.contains('kedelai')) skor += 50;
+        if (detailMakananLower.contains('ikan bandeng')) skor += 80;
+        if (detailMakananLower.contains('ayam goreng')) skor += 75;
+        if (detailMakananLower.contains('telur')) skor += 70;
+        if (detailMakananLower.contains('daging sapi')) skor += 75;
+        if (detailMakananLower.contains('pisang')) skor += 50;
+        if (detailMakananLower.contains('pepaya')) skor += 45;
+        if (detailMakananLower.contains('semangka')) skor += 40;
+        if (detailMakananLower.contains('apel')) skor += 30;
+        if (detailMakananLower.contains('susu uht')) skor += 10;
+        if (detailMakananLower.contains('susu bubuk')) skor += 5;
+        if (detailMakananLower.contains('keju')) skor += 25;
+        if (detailMakananLower.contains('mentega')) skor += 15;
+        if (detailMakananLower.contains('minyak sayur')) skor += 5;
 
         // Skor Jarak (Prioritas dekat)
         skor += (100 - (jarakMeter / 1000));
@@ -408,28 +418,39 @@ class JadwalService {
         }
 
         // Hitung Skor
-        String jenisMakanan = itemMenu['jenis_makanan'] ?? 'Umum';
+        String detailMakanan = itemMenu['detail_makanan'] ?? 'Umum';
         double skor = 0;
-        String jenisLower = jenisMakanan.toLowerCase();
+        String detailMakananLower = detailMakanan.toLowerCase();
 
         // Skor Jenis Makanan
-        if (jenisLower.contains('sayur'))
-          skor += 500;
-        else if (jenisLower.contains('buah'))
-          skor += 400;
-        else if (jenisLower.contains('protein hewani'))
-          skor += 300;
-        else if (jenisLower.contains('susu'))
-          skor += 200;
-        else if (jenisLower.contains('protein nabati'))
-          skor += 100;
-        else if (jenisLower.contains('sumber karbohidrat'))
-          skor += 50;
-        else if (jenisLower.contains('sumber lemak'))
-          skor += 25;
-        else
-          skor += 0;
-        skor += (100 - (jarakMeter / 1000));
+        if (detailMakananLower.contains('sayur bayam')) skor += 98;
+        if (detailMakananLower.contains('sayur sop')) skor += 95;
+        if (detailMakananLower.contains('tumis kangkung')) skor += 90;
+        if (detailMakananLower.contains('bubur ayam')) skor += 95;
+        if (detailMakananLower.contains('nasi putih')) skor += 85;
+        if (detailMakananLower.contains('nasi goreng')) skor += 80;
+        if (detailMakananLower.contains('kentang')) skor += 75;
+        if (detailMakananLower.contains('roti')) skor += 40;
+        if (detailMakananLower.contains('tahu')) skor += 85;
+        if (detailMakananLower.contains('tempe')) skor += 70;
+        if (detailMakananLower.contains('kacang merah')) skor += 65;
+        if (detailMakananLower.contains('kedelai')) skor += 50;
+        if (detailMakananLower.contains('ikan bandeng')) skor += 80;
+        if (detailMakananLower.contains('ayam goreng')) skor += 75;
+        if (detailMakananLower.contains('telur')) skor += 70;
+        if (detailMakananLower.contains('daging sapi')) skor += 75;
+        if (detailMakananLower.contains('pisang')) skor += 50;
+        if (detailMakananLower.contains('pepaya')) skor += 45;
+        if (detailMakananLower.contains('semangka')) skor += 40;
+        if (detailMakananLower.contains('apel')) skor += 30;
+        if (detailMakananLower.contains('susu uht')) skor += 10;
+        if (detailMakananLower.contains('susu bubuk')) skor += 5;
+        if (detailMakananLower.contains('keju')) skor += 25;
+        if (detailMakananLower.contains('mentega')) skor += 15;
+        if (detailMakananLower.contains('minyak sayur')) skor += 5;
+
+        skor += 0;
+        skor += (100 + (jarakMeter / 1000));
         skor += ((dataSekolah['jumlah_penerima'] ?? 0) / 10);
 
         newJadwalItems.add({

@@ -54,6 +54,9 @@ class StartScreen extends StatelessWidget {
 
                   const SizedBox(height: 96),
 
+                  Image.asset('assets/images/logo.png', height: 200, width: 200,),
+                  SizedBox(height: 16,),
+
                   SizedBox(
                     width: 300,
                     child: ElevatedButton(

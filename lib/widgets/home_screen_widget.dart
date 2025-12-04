@@ -128,6 +128,16 @@ class _HomeContentState extends State<_HomeContent> {
         ),
       },
       {
+        'title': "Daftar Scan",
+        'icon': Icons.book,
+        'allowed_roles': ['admin', 'petugas_sppg'],
+        'action': () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => DaftarScanScreen()),
+        ),
+      },
+
+      {
         'title': "Jadwal Pengiriman",
         'icon': Icons.calendar_month,
         'allowed_roles': ['sopir', 'admin'],
@@ -154,9 +164,18 @@ class _HomeContentState extends State<_HomeContent> {
         ),
       },
       {
-        'title': "Pemeriksaan",
+        'title': "Kirim Pengaduan",
         'icon': Icons.send,
         'allowed_roles': ['siswa','admin'],
+        'action': () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => ScanPisangScreen()),
+        ),
+      },
+      {
+        'title': "Scan Pisang",
+        'icon': Icons.camera_alt,
+        'allowed_roles': ['penanggungjawab_mbg'],
         'action': () => Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => ScanPisangScreen()),

@@ -164,18 +164,9 @@ class _HomeContentState extends State<_HomeContent> {
         ),
       },
       {
-        'title': "Kirim Pengaduan",
-        'icon': Icons.send,
+        'title': "Periksa makanan",
+        'icon': Icons.search,
         'allowed_roles': ['siswa','admin'],
-        'action': () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => ScanPisangScreen()),
-        ),
-      },
-      {
-        'title': "Scan Pisang",
-        'icon': Icons.camera_alt,
-        'allowed_roles': ['penanggungjawab_mbg'],
         'action': () => Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => ScanPisangScreen()),
@@ -209,8 +200,8 @@ class _HomeContentState extends State<_HomeContent> {
         ),
       },
       {
-        'title': "Kirim Pengaduan (Siswa)",
-        'icon': Icons.book,
+        'title': "Kirim Pengaduan",
+        'icon': Icons.send,
         'allowed_roles': ['admin','siswa'],
         'action': () => Navigator.push(
           context,

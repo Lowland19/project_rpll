@@ -107,8 +107,8 @@ flutter_launcher_icons:
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
   flutter:
-    uses-material-design: true
     assets:
       - assets/model/model_pisang.tflite
       - assets/model/labels_pisang.txt
+
 

@@ -29,7 +29,7 @@ class _ScanPisangScreenState extends State<ScanPisangScreen> {
     loadModel();
   }
 
-  // ========================= CAMERA ======================================
+  // ====================== CAMERA SETUP ======================
   Future<void> initCamera() async {
     final cameras = await availableCameras();
     if (cameras.isEmpty) return;
@@ -43,7 +43,7 @@ class _ScanPisangScreenState extends State<ScanPisangScreen> {
     if (mounted) setState(() {});
   }
 
-  // ========================= LOAD MODEL ===================================
+  // ====================== LOAD MODEL ========================
   Future<void> loadModel() async {
     try {
       interpreter = await Interpreter.fromAsset('model/model_pisang.tflite');
@@ -55,57 +55,62 @@ class _ScanPisangScreenState extends State<ScanPisangScreen> {
 
       print("MODEL LOADED");
       print("Labels loaded: $labels");
-      print("Jumlah labels: ${labels.length}");
     } catch (e) {
-      print("ERROR loadModel: $e");
+      print("ERROR loading model: $e");
     }
   }
 
-  // ========================= RUN MODEL ====================================
-  Future<String> runModelOnImage(File imageFile) async {
-    if (interpreter == null) return "Model belum siap";
-    if (labels.isEmpty) return "Labels kosong - gagal load file label";
+  // ====================== RUN MODEL =========================
+  Future<Map<String, dynamic>> runModelOnImage(File imageFile) async {
+    if (interpreter == null) {
+      return {"label": "ERROR", "confidence": 0.0};
+    }
 
     final raw = imageFile.readAsBytesSync();
     img.Image? image = img.decodeImage(raw);
 
-    if (image == null) return "Gambar tidak dapat dibaca";
+    if (image == null) {
+      return {"label": "Invalid Image", "confidence": 0.0};
+    }
 
+    // Resize sesuai model (224x224)
     img.Image resized = img.copyResize(image, width: 224, height: 224);
 
-    var input = List.generate(224, (y) {
+    // Input float32 1 x 224 x 224 x 3
+    final input = List.generate(224, (y) {
       return List.generate(224, (x) {
-        final pixel = resized.getPixel(x, y);
+        final p = resized.getPixel(x, y);
         return [
-          pixel.r / 255.0,
-          pixel.g / 255.0,
-          pixel.b / 255.0,
+          p.r / 255.0,
+          p.g / 255.0,
+          p.b / 255.0,
         ];
       });
-    }).reshape([1, 224, 224, 3]);
+    });
 
-    // Gunakan shape output model
-    var outputShape = interpreter!.getOutputTensor(0).shape;
-    var output = List.filled(outputShape.reduce((a, b) => a * b), 0.0)
-        .reshape(outputShape);
+    // Output: 1 × 4
+    var output = List<double>.filled(4, 0.0);
 
-    interpreter!.run(input, output);
-    final result = output[0];
+    interpreter!.run([input], [output]);
 
+    // Cari nilai terbesar (softmax)
     int maxIndex = 0;
-    double maxValue = -999;
+    double maxValue = output[0];
 
-    for (int i = 0; i < result.length; i++) {
-      if (result[i] > maxValue) {
-        maxValue = result[i];
+    for (int i = 1; i < output.length; i++) {
+      if (output[i] > maxValue) {
+        maxValue = output[i];
         maxIndex = i;
       }
     }
 
-    return "${labels[maxIndex]} (confidence: ${maxValue.toStringAsFixed(2)})";
+    return {
+      "label": labels[maxIndex],      // label diambil dari file txt
+      "confidence": maxValue * 100,   // %, model softmax output 0–1
+    };
   }
 
-  // ========================= DISPOSE ======================================
+  // ====================== DISPOSE ===========================
   @override
   void dispose() {
     _controller?.dispose();
@@ -113,7 +118,7 @@ class _ScanPisangScreenState extends State<ScanPisangScreen> {
     super.dispose();
   }
 
-  // ========================= UI ===========================================
+  // ====================== UI ================================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -136,19 +141,21 @@ class _ScanPisangScreenState extends State<ScanPisangScreen> {
             final image = await _controller!.takePicture();
             final file = File(image.path);
 
-            // ============ 1. JALANKAN MODEL ============
+            // 1️⃣ RUN MODEL
             final hasil = await runModelOnImage(file);
 
-            // ============ 2. UPLOAD FOTO KE SUPABASE ============
+            // 2️⃣ UPLOAD FOTO
             final imageUrl = await scanService.uploadImage(file);
 
-            // ============ 3. SIMPAN KE DATABASE ============
+            // 3️⃣ SIMPAN DATABASE
             await scanService.saveScanResult(
               imageUrl: imageUrl,
-              hasil: hasil,
+              hasil: hasil["label"],
+              confidence: hasil["confidence"] is double
+                  ? hasil["confidence"]
+                  : double.tryParse(hasil["confidence"].toString()) ?? 0.0,
             );
-
-            // ============ 4. TAMPILKAN HALAMAN HASIL ============
+            // 4️⃣ TAMPILKAN HASIL
             if (!mounted) return;
 
             Navigator.push(
@@ -156,7 +163,8 @@ class _ScanPisangScreenState extends State<ScanPisangScreen> {
               MaterialPageRoute(
                 builder: (_) => HasilScanScreen(
                   imagePath: image.path,
-                  hasilModel: hasil,
+                  hasilModel: hasil["label"],
+                  confidence: hasil["confidence"],
                 ),
               ),
             );

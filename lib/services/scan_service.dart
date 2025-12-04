@@ -7,34 +7,49 @@ class ScanService {
   Future<String> uploadImage(File file) async {
     final fileName = "pisang-${DateTime.now().millisecondsSinceEpoch}.jpg";
 
-    final response = await supabase.storage
-        .from('scan_pisang') // NAMA BUCKET BENAR HARUS SAMA
-        .upload(fileName, file);
+    final storage = supabase.storage.from('scan_pisang');
 
-    final publicUrl = supabase.storage
-        .from('scan_pisang')
-        .getPublicUrl(fileName);
+    try {
+      await storage.upload(
+        fileName,
+        file,
+        fileOptions: const FileOptions(cacheControl: '3600', upsert: false),
+      );
 
-    return publicUrl;
+      return storage.getPublicUrl(fileName);
+    } catch (e) {
+      throw Exception("Gagal upload gambar: $e");
+    }
   }
-
 
   Future<void> saveScanResult({
     required String imageUrl,
     required String hasil,
+    required double confidence,
   }) async {
-    await supabase.from("scan_pisang").insert({
-      "image_url": imageUrl,
-      "hasil": hasil,
-      "created_at": DateTime.now().toIso8601String(),
-    });
+    try {
+      await supabase.from("scan_pisang").insert({
+        "image_url": imageUrl,
+        "hasil": hasil,
+        "confidence": confidence,
+        "created_at": DateTime.now().toIso8601String(),
+      });
+    } catch (e) {
+      throw Exception("Gagal menyimpan ke database: $e");
+    }
   }
 
   Future<List<Map<String, dynamic>>> getAllScans() async {
-    return await supabase
-        .from("scan_pisang")
-        .select()
-        .order("created_at", ascending: false);
+    try {
+      final response = await supabase
+          .from("scan_pisang")
+          .select()
+          .order("created_at", ascending: false);
+
+      return List<Map<String, dynamic>>.from(response);
+    } catch (e) {
+      throw Exception("Gagal mengambil data scan: $e");
+    }
   }
 }
 

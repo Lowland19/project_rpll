@@ -271,7 +271,7 @@ class _JadwalPengirimanScreenState extends State<JadwalPengirimanScreen> {
             const SizedBox(height: 6),
             _infoRow(
               Icons.restaurant,
-              "Menu: ${item['detail_makanan']} (${item['jenis']})",
+              "Menu: ${item['detail_makanan']})",
             ),
             _infoRow(Icons.groups, "Penerima: ${item['jumlah']} Siswa"),
             _infoRow(Icons.map, "Jarak: ${item['jarak_text']}"),

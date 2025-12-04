@@ -202,7 +202,7 @@ class _HomeContentState extends State<_HomeContent> {
       {
         'title': "Kirim Pengaduan",
         'icon': Icons.send,
-        'allowed_roles': ['admin','siswa'],
+        'allowed_roles': ['admin','penanggungjawab_mbg'],
         'action': () => Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => PengaduanScreen()),

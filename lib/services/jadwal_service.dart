@@ -197,7 +197,7 @@ class JadwalService {
         .select('''
           *,
           daftar_menu (
-            detail_makanan,   <-- TAMBAHKAN INI (Supaya data diambil dari DB)
+            detail_makanan,
             jenis_makanan,
             lembaga (
               nama_lembaga,
@@ -207,7 +207,7 @@ class JadwalService {
             )
           )
         ''')
-        .eq('tanggal_jadwal', todayDate);
+        .eq('tanggal_jadwal', todayDate).order('skor_prioritas', ascending: false);
 
     final List<dynamic> dataDB = response as List<dynamic>;
 

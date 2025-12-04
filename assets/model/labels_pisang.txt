@@ -1,0 +1,5 @@
+mentah
+setengah_matang
+matang
+busuk
+bukan_pisang

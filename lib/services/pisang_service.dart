@@ -7,74 +7,67 @@ import 'package:tflite_flutter/tflite_flutter.dart';
 class PisangService {
   Interpreter? _interpreter;
   List<String>? _labels;
+
   static const int INPUT_SIZE = 224;
 
   Future<void> loadModel() async {
     try {
-      // Load Model
-      _interpreter = await Interpreter.fromAsset('assets/model_pisang.tflite');
+      _interpreter = await Interpreter.fromAsset('model_pisang.tflite');
 
-      // Load Label
-      final labelData = await rootBundle.loadString('assets/labels.txt');
-      _labels = labelData.split('\n');
+      final rawLabels = await rootBundle.loadString('labels.txt');
+      _labels = rawLabels.split('\n');
 
-      print('Model & Label berhasil dimuat');
+      print("Model & label berhasil dimuat");
     } catch (e) {
-      print('Gagal memuat model: $e');
+      print("Gagal memuat model: $e");
     }
   }
 
   Future<String> predict(File imageFile) async {
     if (_interpreter == null) return "Model belum siap";
 
-    // 1. Baca gambar & Resize
-    var imageBytes = await imageFile.readAsBytes();
-    img.Image? originalImage = img.decodeImage(imageBytes);
+    // 1. Decode image
+    final bytes = await imageFile.readAsBytes();
+    img.Image? ori = img.decodeImage(bytes);
+    if (ori == null) return "Gambar tidak terbaca";
 
-    if (originalImage == null) return "Gagal membaca gambar";
+    // 2. Resize
+    img.Image resized = img.copyResize(ori, width: INPUT_SIZE, height: INPUT_SIZE);
 
-    img.Image resizedImage = img.copyResize(
-      originalImage,
-      width: INPUT_SIZE,
-      height: INPUT_SIZE,
-    );
+    // 3. Konversi menjadi input [1, 224, 224, 3]
+    List<List<List<List<double>>>> input = [
+      List.generate(INPUT_SIZE, (y) {
+        return List.generate(INPUT_SIZE, (x) {
+          final p = resized.getPixel(x, y);
+          return [
+            p.r / 255.0,
+            p.g / 255.0,
+            p.b / 255.0,
+          ];
+        });
+      })
+    ];
 
-    // 2. Konversi Gambar ke Format yang dimengerti AI (Float32 List)
-    // Model butuh input: [1, 224, 224, 3]
-    // Dan normalisasi nilai pixel jadi 0.0 - 1.0 (karena di Colab pakai rescale=1./255)
+    // 4. Output [1, jumlah_label]
+    List<List<double>> output = [
+      List.filled(_labels!.length, 0.0)
+    ];
 
-    var input = List.generate(
-      1,
-      (i) => List.generate(
-        INPUT_SIZE,
-        (y) => List.generate(INPUT_SIZE, (x) {
-          var pixel = resizedImage.getPixel(x, y);
-          // Ambil RGB, bagi 255.0 untuk normalisasi
-          return [pixel.r / 255.0, pixel.g / 255.0, pixel.b / 255.0];
-        }),
-      ),
-    );
-
-    // 3. Siapkan Output buffer
-    // Output shape: [1, 4] (karena ada 4 kelas)
-    var output = List.filled(1 * 4, 0.0).reshape([1, 4]);
-
-    // 4. Jalankan Prediksi
+    // 5. Run model
     _interpreter!.run(input, output);
 
-    // 5. Cari hasil dengan probabilitas tertinggi
-    List<double> result = output[0];
-    double maxScore = 0.0;
-    int maxIndex = 0;
+    final scores = output[0];
+    int bestIndex = 0;
+    double bestScore = 0;
 
-    for (int i = 0; i < result.length; i++) {
-      if (result[i] > maxScore) {
-        maxScore = result[i];
-        maxIndex = i;
+    for (int i = 0; i < scores.length; i++) {
+      if (scores[i] > bestScore) {
+        bestScore = scores[i];
+        bestIndex = i;
       }
     }
 
-    return "${_labels![maxIndex]} (${(maxScore * 100).toStringAsFixed(1)}%)";
+    return "${_labels![bestIndex]} — ${(bestScore * 100).toStringAsFixed(1)}%";
   }
 
   void close() {

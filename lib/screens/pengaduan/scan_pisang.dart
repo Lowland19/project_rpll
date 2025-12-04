@@ -37,16 +37,38 @@ class _ScanPisangScreenState extends State<ScanPisangScreen> {
     _controller = CameraController(
       cameras.first,
       ResolutionPreset.medium,
+      enableAudio: false,
+      imageFormatGroup: ImageFormatGroup.yuv420,
     );
 
-    _initializeControllerFuture = _controller!.initialize();
+    _initializeControllerFuture = _controller!.initialize().then((_) async {
+      // Matikan flash dulu
+      await _controller!.setFlashMode(FlashMode.off);
+
+      // Tunggu 200ms biar preview stabil (penting buat Xiaomi)
+      await Future.delayed(const Duration(milliseconds: 200));
+
+      // Jangan lock exposure dulu, cukup AUTO tanpa precapture
+      try {
+        await _controller!.setExposureMode(ExposureMode.auto);
+        await _controller!.setFocusMode(FocusMode.auto);
+      } catch (_) {}
+
+      // MATIKAN AE/AF TRIGGER SEBELUM FOTO → anti precapture Xiaomi
+      try {
+        await _controller!.setExposurePoint(null);
+        await _controller!.setFocusPoint(null);
+      } catch (_) {}
+    });
+
     if (mounted) setState(() {});
   }
+
 
   // ====================== LOAD MODEL ========================
   Future<void> loadModel() async {
     try {
-      interpreter = await Interpreter.fromAsset('model/model_pisang.tflite');
+      interpreter = await Interpreter.fromAsset('assets/model/model_pisang.tflite');
 
       final rawLabels =
       await rootBundle.loadString('assets/model/labels_pisang.txt');
@@ -73,42 +95,53 @@ class _ScanPisangScreenState extends State<ScanPisangScreen> {
       return {"label": "Invalid Image", "confidence": 0.0};
     }
 
-    // Resize sesuai model (224x224)
-    img.Image resized = img.copyResize(image, width: 224, height: 224);
+    // Resize
+    final resized = img.copyResize(image, width: 224, height: 224);
 
-    // Input float32 1 x 224 x 224 x 3
+    // Siapkan input float32 [1,224,224,3]
     final input = List.generate(224, (y) {
       return List.generate(224, (x) {
-        final p = resized.getPixel(x, y);
-        return [
-          p.r / 255.0,
-          p.g / 255.0,
-          p.b / 255.0,
-        ];
+        final pixel = resized.getPixel(x, y);
+
+        final r = (pixel.r - 127.5) / 127.5;
+        final g = (pixel.g - 127.5) / 127.5;
+        final b = (pixel.b - 127.5) / 127.5;
+
+        return [r, g, b];
       });
     });
 
-    // Output: 1 × 4
-    var output = List<double>.filled(4, 0.0);
 
-    interpreter!.run([input], [output]);
+    // Tambah batch dimension
+    final inputTensor = [input];
 
-    // Cari nilai terbesar (softmax)
+    // Output 1x4
+    var output = List.generate(1, (_) => List.filled(4, 0.0));
+    interpreter!.run(inputTensor, output);
+    final scores = output[0];
+
+
     int maxIndex = 0;
-    double maxValue = output[0];
+    double maxValue = scores[0];
 
-    for (int i = 1; i < output.length; i++) {
-      if (output[i] > maxValue) {
-        maxValue = output[i];
+    for (int i = 1; i < scores.length; i++) {
+      if (scores[i] > maxValue) {
+        maxValue = scores[i];
         maxIndex = i;
       }
     }
-
+    if (maxValue < 0.6) {
+      return {
+        "label": "bukan_pisang",
+        "confidence": maxValue * 100,
+      };
+    }
     return {
-      "label": labels[maxIndex],      // label diambil dari file txt
-      "confidence": maxValue * 100,   // %, model softmax output 0–1
+      "label": labels[maxIndex],
+      "confidence": maxValue * 100,
     };
   }
+
 
   // ====================== DISPOSE ===========================
   @override

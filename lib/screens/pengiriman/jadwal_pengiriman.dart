@@ -271,7 +271,7 @@ class _JadwalPengirimanScreenState extends State<JadwalPengirimanScreen> {
             const SizedBox(height: 6),
             _infoRow(
               Icons.restaurant,
-              "Menu: ${item['menu']} (${item['jenis']})",
+              "Menu: ${item['detail_makanan']} (${item['jenis']})",
             ),
             _infoRow(Icons.groups, "Penerima: ${item['jumlah']} Siswa"),
             _infoRow(Icons.map, "Jarak: ${item['jarak_text']}"),
@@ -347,21 +347,27 @@ class _JadwalPengirimanScreenState extends State<JadwalPengirimanScreen> {
   }
 
   Widget _infoRow(IconData icon, String text) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 4),
-      child: Row(
-        children: [
-          Icon(icon, size: 14, color: Colors.white70),
-          const SizedBox(width: 6),
-          Expanded(
-            child: Text(
-              text,
-              style: const TextStyle(color: Colors.white70, fontSize: 13),
-              overflow: TextOverflow.ellipsis,
-            ),
+  return Padding(
+    padding: const EdgeInsets.only(bottom: 4),
+    child: Row(
+      // 1. Agar ikon tetap di atas (tidak turun ke tengah saat teks jadi 2 baris)
+      crossAxisAlignment: CrossAxisAlignment.start, 
+      children: [
+        // Sedikit padding top pada icon agar sejajar dengan teks baris pertama
+         Padding(
+          padding: EdgeInsets.only(top: 2.0), 
+          child: Icon(icon, size: 14, color: Colors.white70),
+        ),
+        const SizedBox(width: 6),
+        Expanded(
+          child: Text(
+            text,
+            style: const TextStyle(color: Colors.white70, fontSize: 13),
+            // 2. HAPUS bagian 'overflow: TextOverflow.ellipsis'
+            // Text akan otomatis wrap ke bawah karena ada di dalam Expanded
           ),
-        ],
-      ),
-    );
-  }
-}
+        ),
+      ],
+    ),
+  );
+}}

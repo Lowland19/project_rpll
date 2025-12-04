@@ -122,12 +122,12 @@ class JadwalService {
         hasilJadwal.add({
           'id_menu': itemMenu['id'],
           'nama': namaSekolah, // Nama Sekola
+          'detail_makanan' : detailMakanan,
           'jenis': jenisMakanan,
           'jumlah': jumlahSiswa,
           'jarak_meter': jarakMeter,
           'jarak_text': "${(jarakMeter / 1000).toStringAsFixed(1)} km",
           'skor': skor,
-
           'lat_tujuan': latTujuan,
           'long_tujuan': longTujuan,
 
@@ -186,80 +186,60 @@ class JadwalService {
   }
 
   Future<List<Map<String, dynamic>>> getJadwalHarian() async {
-    try {
-      final String todayDate = DateTime.now().toIso8601String().substring(
-        0,
-        10,
-      );
+  try {
+    final String todayDate = DateTime.now().toIso8601String().substring(0, 10);
+    
+    // ... (kode ambil lokasi dapur tetap sama) ...
 
-      // 1. Ambil Lokasi Dapur dulu (untuk koordinat asal rute)
-      //    (Karena tabel jadwal cuma simpan data tujuan, kita butuh data asal juga)
-      final dataDapur = await _supabase
-          .from('lembaga')
-          .select('latitude, longitude')
-          .eq('jenis_lembaga', 'Dapur SPPG')
-          .maybeSingle();
-
-      double latDapur = 0;
-      double longDapur = 0;
-      if (dataDapur != null) {
-        latDapur = (dataDapur['latitude'] as num).toDouble();
-        longDapur = (dataDapur['longitude'] as num).toDouble();
-      }
-
-      // 2. Query Data Jadwal (Join Bertingkat)
-      // jadwal_pengiriman -> daftar_menu -> lembaga
-      final response = await _supabase
-          .from('jadwal_pengiriman')
-          .select('''
-            *,
-            daftar_menu (
-              jenis_makanan,
-              lembaga (
-                nama_lembaga,
-                jumlah_penerima,
-                latitude,
-                longitude
-              )
+    // 2. Query Data Jadwal
+    final response = await _supabase
+        .from('jadwal_pengiriman')
+        .select('''
+          *,
+          daftar_menu (
+            detail_makanan,   <-- TAMBAHKAN INI (Supaya data diambil dari DB)
+            jenis_makanan,
+            lembaga (
+              nama_lembaga,
+              jumlah_penerima,
+              latitude,
+              longitude
             )
-          ''')
-          .eq('tanggal_jadwal', todayDate);
-           // Urutkan berdasarkan skor yg sudah disimpan
+          )
+        ''')
+        .eq('tanggal_jadwal', todayDate);
 
-      final List<dynamic> dataDB = response as List<dynamic>;
+    final List<dynamic> dataDB = response as List<dynamic>;
 
-      // 3. Mapping Data (Agar formatnya SAMA PERSIS dengan hasil generateSchedule)
-      // Kita harus 'meratakan' (flatten) struktur JSON yang bersarang
-      return dataDB.map((item) {
-        final menu = item['daftar_menu'];
-        final sekolah = menu['lembaga'];
+    // 3. Mapping Data
+    return dataDB.map((item) {
+      final menu = item['daftar_menu'];
+      final sekolah = menu['lembaga'];
 
-        return {
-          // Data Utama
-          'id_menu': item['id_menu'], // ID untuk update status nanti
-          'nama': sekolah['nama_lembaga'],
-          'jenis': menu['jenis_makanan'],
-          'jumlah': sekolah['jumlah_penerima'] ?? 0,
-          'status': item['status'], // pending/selesai
-          // Data Jarak & Skor (Ambil langsung dari DB, gak usah hitung lagi)
-          'jarak_meter': item['jarak_meter'],
-          'jarak_text': "${(item['jarak_meter'] / 1000).toStringAsFixed(1)} km",
-          'skor': item['skor_prioritas'],
-
-          // Koordinat Tujuan (Sekolah)
-          'lat_tujuan': (sekolah['latitude'] as num?)?.toDouble() ?? 00,
-          'long_tujuan': (sekolah['longitude'] as num?)?.toDouble() ?? 00,
-
-          // Koordinat Asal (Dapur)
-          'lat_dapur': latDapur,
-          'long_dapur': longDapur,
-        };
-      }).toList();
-    } catch (e) {
-      debugPrint("Gagal mengambil jadwal dari DB: $e");
-      return []; // Return kosong jika error/belum ada data
-    }
+      return {
+        'id_menu': item['id_menu'],
+        'nama': sekolah['nama_lembaga'],
+        
+        // --- TAMBAHKAN BARIS INI ---
+        'detail_makanan': menu['detail_makanan'] ?? 'Menu Umum',
+        // ---------------------------
+        
+        'jenis': menu['jenis_makanan'],
+        'jumlah': sekolah['jumlah_penerima'] ?? 0,
+        'status': item['status'],
+        'jarak_meter': item['jarak_meter'],
+        'jarak_text': "${(item['jarak_meter'] / 1000).toStringAsFixed(1)} km",
+        'skor': item['skor_prioritas'],
+        'lat_tujuan': (sekolah['latitude'] as num?)?.toDouble() ?? 0.0,
+        'long_tujuan': (sekolah['longitude'] as num?)?.toDouble() ?? 0.0,
+        // ... (data dapur tetap sama)
+      };
+    }).toList();
+  } catch (e) {
+    debugPrint("Gagal mengambil jadwal dari DB: $e");
+    return [];
   }
+}
 
   // --- FUNGSI BARU: SIMPAN JADWAL KE DB ---
   Future<void> simpanJadwalKeDB(

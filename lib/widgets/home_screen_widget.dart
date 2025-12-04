@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:project_rpll/screens/pengaduan/daftar_scan.dart';
 import 'package:project_rpll/screens/pengaduan/pengaduan_screen.dart';
+import 'package:project_rpll/screens/pengaduan/scan_pisang.dart';
 import 'package:provider/provider.dart';
 
 // --- IMPORT SCREENS ---
@@ -154,10 +156,10 @@ class _HomeContentState extends State<_HomeContent> {
       {
         'title': "Pemeriksaan",
         'icon': Icons.send,
-        'allowed_roles': ['penanggungjawab_mbg'],
+        'allowed_roles': ['siswa','admin'],
         'action': () => Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => PemeriksaanScreen()),
+          MaterialPageRoute(builder: (_) => ScanPisangScreen()),
         ),
       },
       {
@@ -190,10 +192,19 @@ class _HomeContentState extends State<_HomeContent> {
       {
         'title': "Kirim Pengaduan (Siswa)",
         'icon': Icons.book,
-        'allowed_roles': ['admin'],
+        'allowed_roles': ['admin','siswa'],
         'action': () => Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => PengaduanScreen()),
+        ),
+      },
+      {
+        'title': "Daftar Hasil Scan",
+        'icon': Icons.person,
+        'allowed_roles': ['petugas_sppg'],
+        'action': () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => DaftarScanScreen()),
         ),
       },
     ];

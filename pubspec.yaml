@@ -36,6 +36,7 @@ flutter:
   assets:
     - assets/model/model_pisang.tflite
     - assets/model/labels_pisang.txt
+    - assets/images/
 
 flutter_launcher_icons:
   android: "ic_launcher"

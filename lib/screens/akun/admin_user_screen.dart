@@ -18,6 +18,7 @@ class _AdminUserScreenState extends State<AdminUserScreen> {
     'pendatang',
     'sopir',
     'petugas_sppg',
+    'siswa',
   ];
 
   @override

@@ -31,7 +31,7 @@ class HasilScanScreen extends StatelessWidget {
             // FOTO
             SizedBox(
               height: 300,
-              child: Image.file(File(imagePath), fit: BoxFit.cover),
+              child: Image.network((imagePath), fit: BoxFit.cover),
             ),
 
             const SizedBox(height: 24),

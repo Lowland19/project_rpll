@@ -121,26 +121,17 @@ class _HomeContentState extends State<_HomeContent> {
       {
         'title': "Daftar Pengaduan",
         'icon': Icons.book,
-        'allowed_roles': ['admin', 'petugas_sppg'],
+        'allowed_roles': [ 'petugas_sppg'],
         'action': () => Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => LaporanScreen()),
-        ),
-      },
-      {
-        'title': "Daftar Scan",
-        'icon': Icons.book,
-        'allowed_roles': ['admin', 'petugas_sppg'],
-        'action': () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => DaftarScanScreen()),
         ),
       },
 
       {
         'title': "Jadwal Pengiriman",
         'icon': Icons.calendar_month,
-        'allowed_roles': ['sopir', 'admin'],
+        'allowed_roles': ['sopir'],
         'action': () => Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => const JadwalPengirimanScreen()),
@@ -149,7 +140,7 @@ class _HomeContentState extends State<_HomeContent> {
       {
         'title': isSelesai ? "Selesai" : "Perkiraan Waktu",
         'icon': Icons.timer,
-        'allowed_roles': ['penanggungjawab_mbg', 'admin'],
+        'allowed_roles': ['penanggungjawab_mbg'],
         // Jika selesai, aksi dimatikan (null)
         'action': isSelesai ? null : () => _handlePantauSaya(context),
         'isDisabled': isSelesai,
@@ -157,7 +148,7 @@ class _HomeContentState extends State<_HomeContent> {
       {
         'title': "Pengembalian",
         'icon': Icons.assignment_return,
-        'allowed_roles': ['sopir', 'admin'],
+        'allowed_roles': ['sopir'],
         'action': () => Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => const LaporanPengembalian()),
@@ -166,7 +157,7 @@ class _HomeContentState extends State<_HomeContent> {
       {
         'title': "Periksa makanan",
         'icon': Icons.search,
-        'allowed_roles': ['siswa','admin'],
+        'allowed_roles': ['siswa'],
         'action': () => Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => ScanPisangScreen()),
@@ -175,7 +166,7 @@ class _HomeContentState extends State<_HomeContent> {
       {
         'title': "Daftar Menu",
         'icon': Icons.fastfood,
-        'allowed_roles': ['admin', 'petugas_sppg'],
+        'allowed_roles': [ 'petugas_sppg'],
         'action': () => Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => MenuScreen()),
@@ -184,7 +175,7 @@ class _HomeContentState extends State<_HomeContent> {
       {
         'title': "Daftar Penerima",
         'icon': Icons.people,
-        'allowed_roles': ['admin', 'petugas_sppg'],
+        'allowed_roles': ['petugas_sppg'],
         'action': () => Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => const DaftarPenerimaScreen()),
@@ -202,7 +193,7 @@ class _HomeContentState extends State<_HomeContent> {
       {
         'title': "Kirim Pengaduan",
         'icon': Icons.send,
-        'allowed_roles': ['admin','penanggungjawab_mbg'],
+        'allowed_roles': ['penanggungjawab_mbg'],
         'action': () => Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => PengaduanScreen()),
